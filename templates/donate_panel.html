@@ -259,6 +259,11 @@ async function refresh(){
 
 const r = await fetch("/client/donate-panel/state")
 const data = await r.json()
+    if(data.paused){
+    toggleBtn.innerText = "Continue"
+}else{
+    toggleBtn.innerText = "Pause"
+}
 
 /* верхняя панель */
 
@@ -309,11 +314,21 @@ await fetch(
 
 /* BUTTONS */
 
-document.getElementById("toggleBtn").onclick = async ()=>{
+const toggleBtn = document.getElementById("toggleBtn")
 
-await fetch("/client/donate-panel/pause",{method:"POST"})
+toggleBtn.onclick = async ()=>{
+
+const r = await fetch("/client/donate-panel/pause",{method:"POST"})
+const data = await r.json()
+
+if(data.paused){
+    toggleBtn.innerText = "Continue"
+}else{
+    toggleBtn.innerText = "Pause"
+}
 
 }
+
 
 document.getElementById("skipBtn").onclick = async ()=>{
 

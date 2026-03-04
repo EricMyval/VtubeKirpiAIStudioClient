@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, jsonify
 
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
 from modules.client.donate_panel.repository import DonateRepository
+from modules.client.tts.tts_runtime import tts_runtime
 
 
 bp = Blueprint(
@@ -32,6 +33,7 @@ def state():
 
     current = donate_panel_service.get_current()
     history = donate_panel_service.get_history(30)
+    paused = donate_panel_service.is_paused()
 
     return jsonify({
 
@@ -43,6 +45,8 @@ def state():
             "message": current.message,
             "status": current.status
         } if current else None,
+
+        "paused": paused,
 
         "session_total":
             donate_panel_service.get_session_total(),
@@ -71,17 +75,24 @@ def skip():
 
     donate_panel_service.skip()
 
-    return jsonify({"ok": True})
+    tts_runtime.stop()
+
+    return jsonify({
+        "ok": True
+    })
 
 
 # ==========================================================
-# PAUSE
+# PAUSE / RESUME
 # ==========================================================
 
 @bp.route("/pause", methods=["POST"])
 def pause():
-
     paused = donate_panel_service.toggle_pause()
+    if paused:
+        tts_runtime.pause()
+    else:
+        tts_runtime.resume()
 
     return jsonify({
         "ok": True,
@@ -98,4 +109,6 @@ def repeat(donate_id):
 
     ok = DonateRepository.repeat(donate_id)
 
-    return jsonify({"ok": ok})
+    return jsonify({
+        "ok": ok
+    })

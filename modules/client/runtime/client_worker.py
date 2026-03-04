@@ -2,10 +2,9 @@ import threading
 import time
 
 from modules.afk.afk_state import afk_state
-from modules.client.audio.service import play_sound
 from modules.client.roulette.runtime import roulette_runtime
 from modules.client.runtime.ws_client import send_ws_command
-from modules.client.tts.service import tts_create_file
+from modules.client.tts.tts_runtime import tts_runtime
 from modules.donation_image.donation_image import show_message_image
 from modules.client.alerts.alert_service import alert_service
 from modules.client.alerts.alert_queue import push_alert
@@ -113,13 +112,11 @@ class ClientWorker:
 
             try:
 
-                file_path = tts_create_file(
+                tts_runtime.speak(
                     text,
                     voice_file_path,
                     voice_reference_text
                 )
-
-                play_sound(file_path)
 
             except Exception as e:
                 print(f"[TTS] error: {e}")
