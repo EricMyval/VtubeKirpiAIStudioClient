@@ -223,10 +223,16 @@ return `
 
 <b class="username">${d.username}</b>
 
-<span class="tw-badge">${d.platform}</span>
+<span class="tw-badge">
+${d.platform === "twitch_points" ? d.reward : d.platform}
+</span>
 
 <span style="color:#22c55e;font-weight:700">
-${d.amount} ₽
+${d.amount} ${
+    ["twitch_points","twitch_voice","twitch_ai"].includes(d.platform)
+    ? "points"
+    : "₽"
+}
 </span>
 
 </div>

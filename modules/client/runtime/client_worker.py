@@ -4,6 +4,8 @@ import time
 from modules.afk.afk_state import afk_state
 from modules.client.roulette.runtime import roulette_runtime
 from modules.client.runtime.client_queue import clientEventQueue
+from modules.client.runtime.constant import PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, \
+    PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI, PLATFORM_TYPE_TWITCH_VOICE, PLATFORM_TYPE_TWITCH_AI
 from modules.client.runtime.ws_client import send_ws_command
 from modules.client.tts.tts_runtime import tts_runtime
 from modules.donation_image.donation_image import show_message_image
@@ -64,8 +66,7 @@ class ClientWorker:
         # DONATE PANEL START
         # ======================================
 
-        if is_donate:
-            donate_panel_service.mark_playing(event)
+        donate_panel_service.mark_playing(event)
 
         # ======================================
         # ALERT
@@ -104,22 +105,27 @@ class ClientWorker:
         # TTS
         # ======================================
 
-        text = event.get("formatted_text")
-        voice_file_path = event.get("voice_file_path")
-        voice_reference_text = event.get("voice_reference_text")
-
-        if text and voice_file_path and voice_reference_text:
-
-            try:
-
-                tts_runtime.speak(
-                    text,
-                    voice_file_path,
-                    voice_reference_text
-                )
-
-            except Exception as e:
-                print(f"[TTS] error: {e}")
+        platform = event.get("platform")
+        if platform and platform in {
+            PLATFORM_TYPE_DONATION_ALERTS,
+            PLATFORM_TYPE_DONATION_ALERTS_AI,
+            PLATFORM_TYPE_DONATTY,
+            PLATFORM_TYPE_DONATTY_AI,
+            PLATFORM_TYPE_TWITCH_VOICE,
+            PLATFORM_TYPE_TWITCH_AI
+        }:
+            text = event.get("formatted_text")
+            voice_file_path = event.get("voice_file_path")
+            voice_reference_text = event.get("voice_reference_text")
+            if text and voice_file_path and voice_reference_text:
+                try:
+                    tts_runtime.speak(
+                        text,
+                        voice_file_path,
+                        voice_reference_text
+                    )
+                except Exception as e:
+                    print(f"[TTS] error: {e}")
 
         # ======================================
         # WS COMMANDS
@@ -137,8 +143,7 @@ class ClientWorker:
         # DONATE PANEL END
         # ======================================
 
-        if is_donate:
-            donate_panel_service.mark_finished()
+        donate_panel_service.mark_finished()
 
     # ======================================
 

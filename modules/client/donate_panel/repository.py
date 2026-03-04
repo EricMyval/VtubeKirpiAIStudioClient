@@ -20,9 +20,6 @@ class DonateRepository:
         message: str,
         extra: Optional[str] = None,
     ) -> int:
-
-        donation_session_stats.add(amount)
-
         conn = get_connection()
         cursor = conn.cursor()
 

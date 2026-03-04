@@ -1,6 +1,8 @@
 from .repository import DonateRepository
 from .donate_panel_state import donate_panel_state
 from .session_stats import donation_session_stats
+from ..runtime.constant import PLATFORM_TYPE_TWITCH_POINTS, PLATFORM_TYPE_TWITCH_VOICE, PLATFORM_TYPE_TWITCH_AI, \
+    PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI
 
 
 class DonatePanelService:
@@ -11,23 +13,49 @@ class DonatePanelService:
 
     def add_event_from_poller(self, event: dict):
 
+        platform = event.get("platform") or "unknown"
+
         amount = int(event.get("amount", 0) or 0)
+
+        # twitch points
+        if amount <= 0 and platform in {
+            PLATFORM_TYPE_TWITCH_POINTS,
+            PLATFORM_TYPE_TWITCH_VOICE,
+            PLATFORM_TYPE_TWITCH_AI
+        }:
+            amount = int(event.get("settings", {}).get("points", 0) or 0)
 
         if amount <= 0:
             return
 
         username = event.get("username") or event.get("user") or "unknown"
         message = event.get("message") or ""
-        platform = event.get("platform") or "unknown"
+
+        extra = None
+
+        if platform in {
+            PLATFORM_TYPE_TWITCH_POINTS,
+            PLATFORM_TYPE_TWITCH_VOICE,
+            PLATFORM_TYPE_TWITCH_AI
+        }:
+            extra = event.get("reward")
 
         DonateRepository.add(
             platform=platform,
             username=username,
             amount=amount,
             message=message,
+            extra=extra
         )
 
-        donation_session_stats.add(amount)
+        # считаем только реальные донаты
+        if platform in {
+            PLATFORM_TYPE_DONATION_ALERTS,
+            PLATFORM_TYPE_DONATION_ALERTS_AI,
+            PLATFORM_TYPE_DONATTY,
+            PLATFORM_TYPE_DONATTY_AI
+        }:
+            donation_session_stats.add(amount)
 
     # ==========================================================
     # MARK PLAYING
@@ -35,7 +63,17 @@ class DonatePanelService:
 
     def mark_playing(self, event: dict):
 
+        platform = event.get("platform") or "unknown"
+
         amount = int(event.get("amount", 0) or 0)
+
+        # twitch points
+        if amount <= 0 and platform in {
+            PLATFORM_TYPE_TWITCH_POINTS,
+            PLATFORM_TYPE_TWITCH_VOICE,
+            PLATFORM_TYPE_TWITCH_AI
+        }:
+            amount = int(event.get("settings", {}).get("points", 0) or 0)
 
         if amount <= 0:
             return

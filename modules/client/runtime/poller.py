@@ -2,7 +2,10 @@ import requests
 import time
 from modules.client.cabinet.service import get_api_key
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
-from modules.client.runtime.constant import POLL_INTERVAL, API_URL
+from modules.client.runtime.constant import POLL_INTERVAL, API_URL, PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI, \
+    PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, PLATFORM_TYPE_TWITCH_VOICE, \
+    PLATFORM_TYPE_TWITCH_AI, PLATFORM_TYPE_TWITCH_POINTS
+
 
 class ClientPoller:
 
@@ -65,12 +68,30 @@ class ClientPoller:
                 for event in events:
 
                     amount = int(event.get("amount", 0) or 0)
+                    platform = event.get("platform")
+                    message = event.get("message")
 
-                    # добавляем в панель только донаты
-                    if amount > 0:
+                    add_to_panel = False
+
+                    # обычные донаты
+                    if platform in {
+                        PLATFORM_TYPE_DONATTY,
+                        PLATFORM_TYPE_DONATTY_AI,
+                        PLATFORM_TYPE_DONATION_ALERTS,
+                        PLATFORM_TYPE_DONATION_ALERTS_AI,
+                        PLATFORM_TYPE_TWITCH_VOICE,
+                        PLATFORM_TYPE_TWITCH_AI
+                    }:
+                        add_to_panel = True
+
+                    # twitch channel points
+                    elif platform == PLATFORM_TYPE_TWITCH_POINTS and message:
+                        add_to_panel = True
+
+                    if add_to_panel:
                         donate_panel_service.add_event_from_poller(event)
 
-                    # добавляем событие в очередь worker
+                    # событие всегда отправляем воркеру
                     self.queue.add_event(event)
 
             except Exception as e:

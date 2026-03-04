@@ -46,6 +46,7 @@ def state():
             "platform": current.platform,
             "amount": current.amount,
             "message": current.message,
+            "reward": current.extra,
             "status": current.status
         } if current else None,
 
@@ -61,6 +62,7 @@ def state():
                 "platform": d.platform,
                 "amount": d.amount,
                 "message": d.message,
+                "reward": d.extra,
                 "status": d.status
             }
             for d in history
