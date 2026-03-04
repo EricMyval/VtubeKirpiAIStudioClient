@@ -12,6 +12,7 @@ href="{{ url_for('static', filename='css/glass-ui.css') }}">
 href="{{ url_for('static', filename='css/layout.css') }}">
 
 <style>
+
 /* OBS PANEL */
 
 body{
@@ -35,7 +36,10 @@ body{
 .donation-message{
     margin-top:8px;
     opacity:.85;
+    word-break:break-word;
 }
+
+/* PLAYING DONATE */
 
 .donation-item.playing{
     border:1px solid rgba(34,197,94,.6);
@@ -52,6 +56,8 @@ body{
 .donation-item.playing .tw-card-body{
     background:rgba(34,197,94,.05);
 }
+
+/* LINKS */
 
 .donation-message a{
     color:#93c5fd;
@@ -92,7 +98,6 @@ style="width:10px;height:10px;border-radius:50%;background:#aaa;"></span>
 </span>
 
 </div>
-
 
 <div class="tw-inline">
 
@@ -166,11 +171,12 @@ class="tw-btn tw-btn-primary tw-btn-mini">
 </div>
 
 
-
 <script>
 
 const list = document.getElementById("donationsList")
 const filterInput = document.getElementById("filterInput")
+
+/* LINKIFY */
 
 function linkify(text){
 
@@ -185,6 +191,8 @@ return text.replace(
 
 }
 
+/* RENDER CARD */
+
 function renderDonation(d, currentId){
 
 let stateClass = ""
@@ -193,7 +201,7 @@ if(currentId && d.id === currentId)
     stateClass = "playing"
 
 return `
-<div class="tw-card tw-card-compact donation-item ${stateClass}">
+<div class="tw-card tw-card-compact donation-item ${stateClass}" data-id="${d.id}">
 <div class="tw-card-body">
 
 <div class="tw-inline-between">
@@ -224,20 +232,35 @@ ${d.message
 </div>
 </div>
 `
+
 }
 
+/* UPDATE PLAYING WITHOUT DOM REBUILD */
+
+function updatePlayingState(currentId){
+
+document.querySelectorAll(".donation-item").forEach(el => {
+
+const id = Number(el.dataset.id)
+
+if(currentId && id === currentId){
+    el.classList.add("playing")
+}else{
+    el.classList.remove("playing")
+}
+
+})
+
+}
+
+/* REFRESH */
 
 async function refresh(){
 
-const selection = window.getSelection()
-
-/* если пользователь выделяет текст — не обновляем */
-if(selection && selection.type === "Range"){
-    return
-}
-
 const r = await fetch("/client/donate-panel/state")
 const data = await r.json()
+
+/* верхняя панель */
 
 document.getElementById("sessionTotal").innerText =
 data.session_total + " ₽"
@@ -245,8 +268,18 @@ data.session_total + " ₽"
 document.getElementById("statusDot").style.background =
 data.current ? "#22c55e" : "#aaa"
 
-const filter = filterInput.value.toLowerCase()
 const currentId = data.current ? data.current.id : null
+
+/* если выделяют текст — не перерисовываем DOM */
+
+const selection = window.getSelection()
+
+if(selection && selection.type === "Range"){
+    updatePlayingState(currentId)
+    return
+}
+
+const filter = filterInput.value.toLowerCase()
 
 let html = ""
 
@@ -263,6 +296,7 @@ list.innerHTML = html
 
 }
 
+/* REPEAT */
 
 async function repeatDonate(id){
 
@@ -273,6 +307,7 @@ await fetch(
 
 }
 
+/* BUTTONS */
 
 document.getElementById("toggleBtn").onclick = async ()=>{
 
@@ -286,6 +321,7 @@ await fetch("/client/donate-panel/skip",{method:"POST"})
 
 }
 
+/* TEST DONATE */
 
 document.getElementById("sendTest").onclick = async ()=>{
 
@@ -301,14 +337,17 @@ message:testMessage.value
 
 }
 
+/* EVENTS */
+
 filterInput.addEventListener("input", refresh)
+
+/* LOOP */
 
 setInterval(refresh,2000)
 
 refresh()
 
 </script>
-
 
 </body>
 </html>
