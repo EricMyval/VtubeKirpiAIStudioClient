@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет{% endblock %}
+{% block page_title %}🔐 Личный кабинет{% endblock %}
+{% block page_subtitle %}Настройка API клиента{% endblock %}
+
+{% block content %}
+
+<div class="tw-page">
+
+  <div class="tw-card tw-card-hero">
+    <div class="tw-card-body">
+
+      <div class="tw-hero-header">
+        <div class="tw-hero-icon">🔑</div>
+        <div>
+          <div class="tw-hero-title">API ключ клиента</div>
+          <div class="tw-hero-sub">
+            Введите ключ, полученный на сервере
+          </div>
+        </div>
+      </div>
+
+      <form method="POST" class="tw-form-vertical">
+
+        <div class="tw-field">
+          <label class="tw-label">API ключ</label>
+
+          <div class="tw-key-wrap">
+            <input type="text"
+                   name="api_key"
+                   value="{{ api_key }}"
+                   class="tw-input tw-input-lg tw-key-field"
+                   placeholder="Введите API ключ...">
+          </div>
+        </div>
+
+        <div class="tw-form-actions">
+          <button type="submit" class="tw-btn tw-btn-primary">
+            💾 Сохранить
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

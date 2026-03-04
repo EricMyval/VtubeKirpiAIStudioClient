@@ -1,0 +1,738 @@
+{% extends "base.html" %}
+
+{% block title %}Управление донатами{% endblock %}
+{% block page_title %}💰 Донаты с изображениями{% endblock %}
+{% block page_subtitle %}Добавление, просмотр и триггер показа донатов (с картинкой / без){% endblock %}
+
+{% block content %}
+<div class="dm-page">
+
+  {# FLASH #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="dm-flashes">
+        {% for category, message in messages %}
+          {% set kind = (category if category != 'message' else 'info') %}
+          <div class="dm-alert dm-alert-{{ kind }}">
+            <div class="dm-alert-dot"></div>
+            <div class="dm-alert-text">{{ message }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {# INFO #}
+  <details class="dm-card dm-info" open>
+    <summary class="dm-card-head dm-info-summary">
+      <div class="dm-card-title">
+        <span class="dm-title-ico">ℹ️</span>
+        <span>Как работает отправка доната</span>
+      </div>
+      <span class="dm-chip">ws</span>
+    </summary>
+
+    <div class="dm-card-body">
+      <ul class="dm-list">
+        <li>При показе доната данные отправляются <b>через WebSocket</b>.</li>
+        <li>Команды настраиваются в разделе <b>«Управление командами»</b>.</li>
+        <li>
+          Формат команды:
+          <div class="dm-code-row">
+            <code id="wsFormat">
+{"action":"donate_image_id_ИД_ГОЛОСА","data":"URL_ИЗОБРАЖЕНИЯ"}</code>
+            <button type="button" class="dm-btn dm-btn-mini dm-btn-ghost" id="copyWs" title="Скопировать">
+              📋
+            </button>
+          </div>
+        </li>
+        <li><b>ID голосов</b> настраиваются в разделе <b>«Управление голосами»</b>.</li>
+      </ul>
+
+      <div class="dm-note">
+        <b>Подсказка:</b> “URL_ИЗОБРАЖЕНИЯ” — это ссылка вида <code>/donation-image/&lt;token&gt;</code> или прямой URL из API.
+      </div>
+    </div>
+  </details>
+
+  {# ADD FORM #}
+  <div class="dm-card">
+    <div class="dm-card-head">
+      <div class="dm-card-title">
+        <span class="dm-title-ico">➕</span>
+        <span>Добавить донат</span>
+      </div>
+      <span class="dm-chip">create</span>
+    </div>
+
+    <div class="dm-card-body">
+      <form method="POST" action="{{ url_for('donations.add_donation') }}" class="dm-form">
+        <div class="dm-grid">
+          <div class="dm-field">
+            <label class="dm-label" for="user">Пользователь</label>
+            <input class="dm-input" type="text" id="user" name="user" required placeholder="Ник/имя донатера">
+          </div>
+
+          <div class="dm-field">
+            <label class="dm-label" for="amount_user">Сумма</label>
+            <input class="dm-input" type="text" id="amount_user" name="amount_user" required placeholder="Напр. 150">
+            <div class="dm-hint">Можно строкой, как у тебя в системе (если парсишь сам).</div>
+          </div>
+
+          <div class="dm-field dm-span2">
+            <label class="dm-label" for="message">Сообщение</label>
+            <textarea class="dm-input dm-textarea" id="message" name="message" required
+                      placeholder="Сообщение с ссылкой на изображение..."></textarea>
+            <div class="dm-hint">Если внутри сообщения есть ссылка/токен картинки — она будет показана.</div>
+          </div>
+        </div>
+
+        <div class="dm-actions">
+          <button type="submit" class="dm-btn dm-btn-primary">💾 Добавить</button>
+          <button type="button" class="dm-btn dm-btn-ghost" id="fillExample">✨ Пример</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# LIST HEADER #}
+  <div class="dm-list-head">
+    <div class="dm-list-title">
+      <span class="dm-title-ico">📋</span>
+      <span>Список донатов</span>
+      <span class="dm-count">(<span id="donations-count">0</span>)</span>
+    </div>
+    <div class="dm-list-tools">
+      <button class="dm-btn dm-btn-ghost dm-btn-mini" id="reloadBtn" type="button">🔄 Обновить</button>
+    </div>
+  </div>
+
+  {# LIST #}
+  <div class="dm-card">
+    <div class="dm-card-body">
+      <div id="donations-container" class="dm-donations">
+        <div class="dm-skeleton">Загрузка…</div>
+      </div>
+
+      <div class="dm-load-more" id="load-more-wrap" style="display:none;">
+        <button id="load-more" class="dm-btn dm-btn-ghost">⬇️ Загрузить ещё 10</button>
+        <span class="dm-load-info" id="load-more-info"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# TOAST #}
+<div class="dm-toast" id="dmToast" style="display:none;">
+  <div class="dm-toast-dot" id="dmToastDot"></div>
+  <div class="dm-toast-text" id="dmToastText">ok</div>
+</div>
+
+<style>
+/* ========= Layout ========= */
+.dm-page{ max-width: 1080px; margin: 0 auto; display:grid; gap: 14px; }
+
+/* ========= Alerts ========= */
+.dm-flashes{ display:grid; gap: 8px; }
+.dm-alert{
+  display:flex; align-items:flex-start; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.22);
+}
+:root[data-theme="dark"] .dm-alert{ background: rgba(0,0,0,.14); }
+.dm-alert-dot{
+  width: 10px; height: 10px; border-radius: 999px;
+  margin-top: 5px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109,40,217,.14);
+}
+.dm-alert-text{ font-weight: 800; font-size: 13px; line-height: 1.35; }
+.dm-alert-success .dm-alert-dot{ background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,.18); }
+.dm-alert-warning .dm-alert-dot{ background: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,.18); }
+.dm-alert-danger  .dm-alert-dot{ background: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,.18); }
+
+/* ========= Card ========= */
+.dm-card{
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.22);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+:root[data-theme="dark"] .dm-card{ background: rgba(0,0,0,.14); }
+
+.dm-card-head{
+  padding: 12px 14px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(109,40,217,.08), rgba(37,99,235,.06));
+  border-bottom: 1px solid rgba(229,231,235,.18);
+}
+.dm-card-title{
+  display:flex; align-items:center; gap: 10px;
+  font-weight: 980;
+  letter-spacing: .2px;
+  min-width: 0;
+}
+.dm-title-ico{
+  width: 30px; height: 30px;
+  display:grid; place-items:center;
+  border-radius: 12px;
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(229,231,235,.20);
+  flex: 0 0 auto;
+}
+:root[data-theme="dark"] .dm-title-ico{ background: rgba(0,0,0,.12); }
+
+.dm-chip{
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid rgba(229,231,235,.25);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.12);
+  font-weight: 850;
+  flex: 0 0 auto;
+}
+:root[data-theme="dark"] .dm-chip{ background: rgba(0,0,0,.12); }
+
+.dm-card-body{ padding: 14px; }
+
+.dm-hint{ color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 6px; }
+
+code{
+  background: rgba(148,163,184,.14);
+  border: 1px solid rgba(148,163,184,.18);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* ========= Info ========= */
+.dm-info summary{ list-style:none; cursor:pointer; user-select:none; }
+.dm-info summary::-webkit-details-marker{ display:none; }
+.dm-list{ margin:0; padding-left: 18px; display:grid; gap: 6px; }
+.dm-note{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(109,40,217,.22);
+  background: linear-gradient(135deg, rgba(109,40,217,.10), rgba(37,99,235,.08));
+  font-size: 13px;
+  line-height: 1.4;
+}
+.dm-code-row{
+  margin-top: 8px;
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+}
+.dm-code-row code{
+  white-space: pre-wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  display:block;
+  padding: 10px 10px;
+  border-radius: 14px;
+}
+.dm-code-row .dm-btn{ flex: 0 0 auto; }
+
+/* ========= Form ========= */
+.dm-form{ display:grid; gap: 12px; }
+.dm-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 880px){ .dm-grid{ grid-template-columns: 1fr; } }
+.dm-span2{ grid-column: span 2; }
+@media (max-width: 880px){ .dm-span2{ grid-column: span 1; } }
+
+.dm-field{ display:grid; gap: 6px; }
+.dm-label{ font-weight: 980; font-size: 12px; letter-spacing: .22px; }
+
+.dm-input{
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.14);
+  color: var(--text);
+  outline: none;
+  transition: .15s ease;
+}
+:root[data-theme="dark"] .dm-input{ background: rgba(0,0,0,.16); }
+.dm-input:focus{
+  border-color: rgba(109,40,217,.45);
+  box-shadow: 0 0 0 4px rgba(109,40,217,.14);
+}
+.dm-textarea{
+  min-height: 92px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* ========= List header ========= */
+.dm-list-head{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
+}
+.dm-list-title{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  font-weight: 980;
+}
+.dm-count{ color: var(--muted); font-weight: 900; }
+.dm-list-tools{ display:flex; gap: 8px; }
+
+/* ========= Donation cards ========= */
+.dm-donations{ display:grid; gap: 10px; }
+.dm-skeleton{
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px dashed rgba(148,163,184,.25);
+  color: var(--muted);
+  text-align:center;
+}
+
+.dm-item{
+  border: 1px solid rgba(229,231,235,.18);
+  border-radius: 16px;
+  background: rgba(255,255,255,.10);
+  padding: 12px;
+}
+:root[data-theme="dark"] .dm-item{ background: rgba(0,0,0,.10); }
+
+.dm-item-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dm-who{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  min-width: 0;
+}
+.dm-user{
+  font-weight: 980;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
+}
+.dm-badges{ display:flex; gap: 6px; flex-wrap: wrap; }
+.dm-badge{
+  font-weight: 950;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(229,231,235,.20);
+  background: rgba(255,255,255,.08);
+}
+:root[data-theme="dark"] .dm-badge{ background: rgba(0,0,0,.10); }
+.dm-badge-amount{
+  border-color: rgba(167,139,250,.35);
+  background: rgba(167,139,250,.12);
+}
+.dm-badge-date{ color: var(--muted); font-weight: 900; }
+
+.dm-message{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(229,231,235,.18);
+  background: rgba(255,255,255,.10);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+:root[data-theme="dark"] .dm-message{ background: rgba(0,0,0,.10); }
+
+.dm-media{
+  margin-top: 10px;
+  display:flex;
+  gap: 12px;
+  align-items:flex-start;
+  flex-wrap: wrap;
+}
+.dm-img{
+  width: 220px;
+  max-width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(229,231,235,.22);
+  overflow:hidden;
+  background: rgba(255,255,255,.08);
+}
+.dm-img img{ display:block; width:100%; height:auto; }
+.dm-img a{ display:block; }
+
+.dm-actions{
+  margin-top: 10px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ========= Buttons ========= */
+.dm-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(229,231,235,.28);
+  background: rgba(255,255,255,.12);
+  color: var(--text);
+  font-weight: 950;
+  cursor:pointer;
+  text-decoration:none;
+  transition: .15s ease;
+  white-space: nowrap;
+}
+:root[data-theme="dark"] .dm-btn{ background: rgba(0,0,0,.12); }
+
+.dm-btn:hover{
+  transform: translateY(-1px);
+  border-color: rgba(109,40,217,.35);
+  box-shadow: 0 10px 20px rgba(109,40,217,.12);
+}
+.dm-btn:active{ transform: translateY(0); }
+
+.dm-btn-primary{
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  box-shadow: 0 12px 24px rgba(109,40,217,.22);
+}
+.dm-btn-primary:hover{ box-shadow: 0 16px 30px rgba(109,40,217,.26); }
+
+.dm-btn-ghost{
+  background: rgba(255,255,255,.08);
+}
+:root[data-theme="dark"] .dm-btn-ghost{ background: rgba(0,0,0,.10); }
+
+.dm-btn-danger{
+  border: 1px solid rgba(239,68,68,.35);
+  background: rgba(239,68,68,.10);
+}
+.dm-btn-danger:hover{
+  border-color: rgba(239,68,68,.55);
+  box-shadow: 0 10px 20px rgba(239,68,68,.14);
+}
+
+.dm-btn-mini{ padding: 8px 10px; border-radius: 12px; }
+
+/* ========= Load more ========= */
+.dm-load-more{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 12px;
+  padding-top: 12px;
+}
+.dm-load-info{ color: var(--muted); font-size: 12px; }
+
+/* ========= Toast ========= */
+.dm-toast{
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9999;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.85);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  max-width: min(520px, calc(100vw - 36px));
+}
+:root[data-theme="dark"] .dm-toast{ background: rgba(17,24,39,.88); }
+.dm-toast-dot{
+  width: 10px; height: 10px; border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(109,40,217,.14);
+}
+.dm-toast-text{ font-weight: 950; font-size: 13px; line-height: 1.35; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const PAGE_SIZE = 10;
+
+  const API_PAGE_URL = '{{ url_for("donations.get_donations_page") }}';
+  const API_DELETE_PREFIX = '/api/donations/delete/';
+
+  const donationsContainer = document.getElementById('donations-container');
+  const donationsCount = document.getElementById('donations-count');
+
+  const loadMoreWrap = document.getElementById('load-more-wrap');
+  const loadMoreBtn = document.getElementById('load-more');
+  const loadMoreInfo = document.getElementById('load-more-info');
+
+  const reloadBtn = document.getElementById('reloadBtn');
+
+  const toast = document.getElementById('dmToast');
+  const toastDot = document.getElementById('dmToastDot');
+  const toastText = document.getElementById('dmToastText');
+
+  const copyWsBtn = document.getElementById('copyWs');
+  const wsFormat = document.getElementById('wsFormat');
+
+  const fillExample = document.getElementById('fillExample');
+
+  let currentPage = 1;
+  let total = 0;
+  let hasMore = false;
+  let shown = [];
+
+  function showToast(msg, kind){
+    if (!toast || !toastText || !toastDot) return;
+    toastText.textContent = msg;
+
+    // kind: info/success/danger/warn
+    const map = {
+      success: {bg:'rgba(34,197,94,.18)', dot:'#22c55e'},
+      danger:  {bg:'rgba(239,68,68,.18)', dot:'#ef4444'},
+      warn:    {bg:'rgba(245,158,11,.18)', dot:'#f59e0b'},
+      info:    {bg:'rgba(109,40,217,.14)', dot:''}
+    };
+    const c = map[kind || 'info'] || map.info;
+    toast.style.display = 'flex';
+    toastDot.style.background = c.dot || 'var(--accent)';
+    toastDot.style.boxShadow = `0 0 0 4px ${c.bg || 'rgba(109,40,217,.14)'}`;
+
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => { toast.style.display = 'none'; }, 2200);
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text ?? '';
+    return div.innerHTML;
+  }
+
+  function donationCardHTML(d) {
+    const id = d[0];
+    const user = escapeHtml(d[1] || '');
+    const msg = escapeHtml(d[2] || '');
+    const amount = escapeHtml(String(d[3] ?? ''));
+    const imageUrl = d[4] || '';
+    const date = escapeHtml(String(d[5] ?? ''));
+
+    const imgHtml = imageUrl ? `
+      <div class="dm-media">
+        <div class="dm-img">
+          <a href="${imageUrl}" target="_blank" rel="noopener noreferrer" title="Открыть изображение">
+            <img src="${imageUrl}" alt="Изображение доната" loading="lazy">
+          </a>
+        </div>
+      </div>` : '';
+
+    return `
+      <div class="dm-item" data-donation-id="${id}">
+        <div class="dm-item-head">
+          <div class="dm-who">
+            <div class="dm-user" title="${user}">${user}</div>
+            <div class="dm-badges">
+              <span class="dm-badge dm-badge-amount">${amount} ₽</span>
+              <span class="dm-badge dm-badge-date">${date}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dm-message">${msg}</div>
+        ${imgHtml}
+
+        <div class="dm-actions">
+          <button class="dm-btn dm-btn-primary btn-trigger" data-donation-id="${id}" data-mode="with_image">
+            🖼️ Показать с картинкой
+          </button>
+
+          <button class="dm-btn dm-btn-danger btn-delete" data-donation-id="${id}" data-username="${user}">
+            🗑️ Удалить
+          </button>
+        </div>
+      </div>`;
+  }
+
+  function render() {
+    if (!shown.length) {
+      donationsContainer.innerHTML = '<div class="dm-skeleton">Донаты не найдены.</div>';
+      loadMoreWrap.style.display = 'none';
+      donationsCount.textContent = String(total || 0);
+      return;
+    }
+
+    donationsContainer.innerHTML = shown.map(donationCardHTML).join('');
+    attachEventHandlers();
+
+    donationsCount.textContent = String(total);
+
+    if (total > PAGE_SIZE) {
+      loadMoreWrap.style.display = 'flex';
+      loadMoreBtn.disabled = !hasMore;
+      loadMoreInfo.textContent = `Показано ${shown.length} из ${total}`;
+      loadMoreBtn.textContent = hasMore ? '⬇️ Загрузить ещё 10' : '✅ Всё загружено';
+    } else {
+      loadMoreWrap.style.display = 'none';
+    }
+  }
+
+  async function fetchPage(page) {
+    const url = `${API_PAGE_URL}?page=${page}&page_size=${PAGE_SIZE}`;
+    const r = await fetch(url, { cache: 'no-store' });
+    return await r.json();
+  }
+
+  async function loadFirstPage() {
+    donationsContainer.innerHTML = '<div class="dm-skeleton">Загрузка…</div>';
+
+    const data = await fetchPage(1);
+    if (!data.success) {
+      donationsContainer.innerHTML = '<div class="dm-skeleton">Ошибка загрузки.</div>';
+      showToast('Ошибка загрузки списка', 'danger');
+      return;
+    }
+
+    currentPage = 1;
+    total = data.total || 0;
+    hasMore = !!data.has_more;
+    shown = data.donations || [];
+
+    render();
+  }
+
+  async function loadNextPage() {
+    if (!hasMore) return;
+
+    const next = currentPage + 1;
+    const data = await fetchPage(next);
+    if (!data.success) {
+      showToast('Ошибка загрузки страницы', 'danger');
+      return;
+    }
+
+    currentPage = next;
+    total = data.total ?? total;
+    hasMore = !!data.has_more;
+    shown = shown.concat(data.donations || []);
+
+    render();
+  }
+
+  async function deleteDonation(donationId) {
+    const r = await fetch(API_DELETE_PREFIX + donationId, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      cache: 'no-store'
+    });
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || 'delete_failed');
+  }
+
+  function removeFromState(donationId) {
+    const idStr = String(donationId);
+    shown = shown.filter(d => String(d[0]) !== idStr);
+    total = Math.max(0, total - 1);
+  }
+
+  function attachEventHandlers() {
+    document.querySelectorAll('.btn-trigger').forEach(button => {
+      button.addEventListener('click', async function() {
+        const donationId = this.dataset.donationId;
+        const mode = this.dataset.mode;
+
+        const original = this.innerHTML;
+        this.disabled = true;
+        this.innerHTML = '⏳ Отправка…';
+
+        try {
+          const r = await fetch(`/donations/trigger/${donationId}/${mode}`, { cache:'no-store' });
+          const data = await r.json();
+          if (data.success) {
+            showToast(data.message || 'Команда отправлена', 'success');
+          } else {
+            showToast('Ошибка: ' + (data.error || 'unknown'), 'danger');
+          }
+        } catch (e) {
+          showToast('Ошибка сети', 'danger');
+        } finally {
+          this.disabled = false;
+          this.innerHTML = original;
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-delete').forEach(button => {
+      button.addEventListener('click', async function() {
+        const donationId = this.dataset.donationId;
+        const username = this.dataset.username || 'пользователь';
+
+        if (!confirm(`Удалить донат от ${username}?`)) return;
+
+        const original = this.innerHTML;
+        this.disabled = true;
+        this.innerHTML = '⏳ Удаляю…';
+
+        try {
+          await deleteDonation(donationId);
+
+          const card = document.querySelector(`.dm-item[data-donation-id="${donationId}"]`);
+          if (card) card.remove();
+          removeFromState(donationId);
+
+          render();
+          showToast('Донат удалён', 'success');
+        } catch (e) {
+          showToast('Ошибка удаления: ' + (e.message || e), 'danger');
+          this.disabled = false;
+          this.innerHTML = original;
+        }
+      });
+    });
+  }
+
+  loadMoreBtn.addEventListener('click', loadNextPage);
+  if (reloadBtn) reloadBtn.addEventListener('click', loadFirstPage);
+
+  if (copyWsBtn && wsFormat){
+    copyWsBtn.addEventListener('click', async () => {
+      const text = wsFormat.textContent || '';
+      try{
+        await navigator.clipboard.writeText(text.trim());
+        copyWsBtn.textContent = '✅';
+        showToast('Формат скопирован', 'success');
+        setTimeout(() => copyWsBtn.textContent = '📋', 900);
+      }catch(e){
+        showToast('Не удалось скопировать', 'warn');
+      }
+    });
+  }
+
+  if (fillExample){
+    fillExample.addEventListener('click', () => {
+      const u = document.getElementById('user');
+      const a = document.getElementById('amount_user');
+      const m = document.getElementById('message');
+      if (u) u.value = u.value || 'Аноним';
+      if (a) a.value = a.value || '150';
+      if (m) m.value = m.value || 'Привет! Вот картинка: https://example.com/image.png';
+      showToast('Заполнил пример', 'info');
+    });
+  }
+
+  loadFirstPage();
+});
+</script>
+{% endblock %}

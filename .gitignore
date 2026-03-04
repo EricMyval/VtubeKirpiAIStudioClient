@@ -1,0 +1,8 @@
+venv/
+data/
+__pycache__/
+*.pyc
+.idea/
+.env
+web_admin_config.json
+uploads/

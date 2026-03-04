@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Панель администратора{% endblock %}</title>
+
+  <!-- Layout -->
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/layout.css') }}">
+
+  <!-- Glass UI -->
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/glass-ui.css') }}">
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ================= MOBILE TOPBAR ================= -->
+    <div class="mobile-topbar">
+      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <div class="logo" style="width:28px;height:28px;border-radius:10px;"></div>
+        <div style="min-width:0;">
+          <div style="font-weight:900; line-height:1;">Панель администратора</div>
+          <div class="brand-sub">Настройки ассистента</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button class="theme-btn" id="themeToggleMobile" type="button">🌙</button>
+        <button class="menu-btn" type="button"
+                onclick="document.body.classList.toggle('menu-open')">
+          ☰
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+
+      <div class="sidebar-header">
+
+        <div class="sidebar-top">
+          <a href="{{ url_for('index') }}" class="brand">
+            <div class="logo"></div>
+            <div class="brand-text">
+              <div class="brand-title">Панель администратора</div>
+              <div class="brand-sub">Настройки ассистента</div>
+            </div>
+          </a>
+
+          <button class="theme-btn" id="themeToggle" type="button">🌙</button>
+        </div>
+
+        <div class="sidebar-search">
+          <span class="search-icon">🔎</span>
+          <input id="menuSearch"
+                 type="text"
+                 placeholder="Поиск по меню..."
+                 autocomplete="off">
+        </div>
+
+      </div>
+
+      <nav class="nav" id="menuNav">
+
+        <!-- Клиент -->
+        <details class="nav-group" open>
+          <summary>
+            <span>🖥️ Клиент</span>
+            <span class="hint">Настройки</span>
+          </summary>
+          <div class="nav-items">
+
+
+            <a class="nav-link"
+               href="{{ url_for('client_cabinet.cabinet') }}"
+               data-title="Личный кабинет клиента">
+
+              <div class="nav-left">
+                <div class="nav-emoji">🔐</div>
+                <div class="nav-title">Личный кабинет</div>
+              </div>
+
+              <span class="nav-chip">api</span>
+            </a>
+
+            <a class="nav-link"
+               href="{{ url_for('client_audio.page') }}"
+               data-title="Аудио клиента">
+
+              <div class="nav-left">
+                <div class="nav-emoji">🎧</div>
+                <div class="nav-title">Аудио</div>
+              </div>
+
+              <span class="nav-chip">sound</span>
+            </a>
+
+          </div>
+        </details>
+
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="studio-card">
+          <div class="studio-title">
+            💡 Vtube Kirpi AI Studio
+          </div>
+
+          <div class="studio-meta">
+            Исполнитель: <span class="studio-strong">Eric Myval</span>
+          </div>
+
+          <div class="studio-links">
+            <a href="mailto:Eric@Myval.ru">📧 Eric@Myval.ru</a>
+            <a href="https://kirpi-gpt.ru/" target="_blank">🌐 kirpi-gpt.ru</a>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ================= MAIN ================= -->
+    <main class="main">
+
+      <div class="main-header">
+        <div>
+          <div class="main-title">
+            {% block page_title %}Раздел{% endblock %}
+          </div>
+          <div class="main-sub">
+            {% block page_subtitle %}Управление настройками{% endblock %}
+          </div>
+        </div>
+      </div>
+
+      <div class="main-body">
+        {% block content %}{% endblock %}
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ================= JS ================= -->
+
+  <script>
+    // Theme toggle
+    (function(){
+      const root = document.documentElement;
+      const btn = document.getElementById('themeToggle');
+      const btnM = document.getElementById('themeToggleMobile');
+
+      function apply(theme){
+        if(theme === 'dark'){
+          root.setAttribute('data-theme','dark');
+          if(btn) btn.textContent = '☀️';
+          if(btnM) btnM.textContent = '☀️';
+        }else{
+          root.removeAttribute('data-theme');
+          if(btn) btn.textContent = '🌙';
+          if(btnM) btnM.textContent = '🌙';
+        }
+      }
+
+      const saved = localStorage.getItem('theme') || 'light';
+      apply(saved);
+
+      function toggle(){
+        const isDark = root.getAttribute('data-theme') === 'dark';
+        const next = isDark ? 'light' : 'dark';
+        localStorage.setItem('theme', next);
+        apply(next);
+      }
+
+      if(btn) btn.addEventListener('click', toggle);
+      if(btnM) btnM.addEventListener('click', toggle);
+    })();
+
+
+    // Menu search
+    (function(){
+      const input = document.getElementById('menuSearch');
+      const nav = document.getElementById('menuNav');
+      if (!input || !nav) return;
+
+      const links = Array.from(nav.querySelectorAll('.nav-link'));
+      const groups = Array.from(nav.querySelectorAll('.nav-group'));
+
+      function normalize(s){ return (s || '').toLowerCase().trim(); }
+
+      input.addEventListener('input', () => {
+        const q = normalize(input.value);
+        let anyVisible = false;
+
+        links.forEach(a => {
+          const title = normalize(a.getAttribute('data-title') || a.innerText);
+          const show = !q || title.includes(q);
+          a.style.display = show ? '' : 'none';
+        });
+
+        groups.forEach(g => {
+          const items = Array.from(g.querySelectorAll('.nav-link'));
+          const visibleCount = items.filter(x => x.style.display !== 'none').length;
+          g.style.display = visibleCount ? '' : 'none';
+          if (q && visibleCount) g.open = true;
+          if (!q) g.open = true;
+          anyVisible = anyVisible || visibleCount > 0;
+        });
+
+        nav.dataset.empty = (!anyVisible && q) ? '1' : '';
+      });
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>OBS Timer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    /* === OBS SAFE RESET === */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* === TIMER === */
+    .timer {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                   "Liberation Mono", "Courier New", monospace;
+      font-weight: 900;
+      font-size: clamp(48px, 8vw, 120px);
+      letter-spacing: 0.08em;
+      color: #ffffff;
+
+      /* тень для читаемости в OBS */
+      text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.55),
+        0 0 18px rgba(0, 0, 0, 0.35);
+
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    /* optional: краснеет при отрицательном времени */
+    .timer.negative {
+      color: #ff4d4d;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="timer" class="timer">{{ current_time }}</div>
+
+ <script>
+(function () {
+  const el = document.getElementById('timer');
+
+  let serverSeconds = null;
+  let displaySeconds = null;
+  let isRunning = false;
+
+  const SMOOTH_SPEED = 10; // чем больше — тем быстрее догоняем (8–15 идеально)
+
+  function format(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = s % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+  }
+
+  async function syncFromServer() {
+    try {
+      const r = await fetch('/timer/status', { cache: 'no-store' });
+      const data = await r.json();
+
+      isRunning = !!data.is_running;
+
+      if (!isRunning) {
+        el.style.display = 'none';
+        serverSeconds = null;
+        displaySeconds = null;
+        return;
+      }
+
+      el.style.display = 'block';
+
+      serverSeconds = Number(data.remaining_seconds);
+
+      // первая инициализация
+      if (displaySeconds === null) {
+        displaySeconds = serverSeconds;
+      }
+
+    } catch (e) {
+      // тихо
+    }
+  }
+
+  function renderLoop() {
+    if (isRunning && serverSeconds !== null && displaySeconds !== null) {
+
+      const diff = serverSeconds - displaySeconds;
+
+      // если рассинхрон большой — телепорт (например reset / set_time)
+      if (Math.abs(diff) > 2) {
+        displaySeconds = serverSeconds;
+      } else {
+        // плавное сближение
+        displaySeconds += diff * 0.15;
+      }
+
+      el.textContent = format(displaySeconds);
+    }
+
+    requestAnimationFrame(renderLoop);
+  }
+
+  // старт
+  syncFromServer();
+  setInterval(syncFromServer, 1000); // сервер — каждую секунду
+  renderLoop();
+})();
+</script>
+
+
+
+
+
+</body>
+</html>

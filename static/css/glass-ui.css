@@ -1,0 +1,882 @@
+/* =========================================================
+   KIRPI AI — GLASS UI SYSTEM
+   Centralized interface styles
+   ========================================================= */
+
+
+/* =============================
+   Subscription Badge
+============================= */
+
+.subscription-badge {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding:6px 10px;
+  border-radius:14px;
+  font-size:12px;
+  font-weight:700;
+  min-width:110px;
+}
+
+.sub-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.sub-plan {
+  font-weight:800;
+}
+
+.sub-days {
+  opacity:.9;
+}
+
+.sub-danger {
+  color:#ef4444;
+}
+
+.sub-progress {
+  height:4px;
+  background:rgba(255,255,255,.15);
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.sub-progress-bar {
+  height:100%;
+  background:linear-gradient(90deg,#22c55e,#3b82f6);
+  transition:width .3s ease;
+}
+
+/* Цвета по тарифам */
+
+.account-premium {
+  background:linear-gradient(135deg,#9333ea,#6366f1);
+  color:#fff;
+}
+
+.account-basic {
+  background:#2563eb;
+  color:#fff;
+}
+
+.account-econom {
+  background:#059669;
+  color:#fff;
+}
+
+.account-unpaid {
+  background:#374151;
+  color:#9ca3af;
+}
+
+.account-admin {
+  background:linear-gradient(135deg,#f59e0b,#ef4444);
+  color:#fff;
+}
+
+/* =========================================================
+   Layout
+   ========================================================= */
+
+.tw-page{
+  max-width:1100px;
+  margin:0 auto;
+  display:grid;
+  gap:32px;
+}
+
+.tw-grid-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:24px;
+}
+
+@media(max-width:900px){
+  .tw-grid-2{
+    grid-template-columns:1fr;
+  }
+}
+
+.tw-inline{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.tw-inline-between{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:16px;
+}
+
+
+/* =========================================================
+   Cards (Glass)
+   ========================================================= */
+
+.tw-card{
+  position:relative;
+  border-radius:24px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.05);
+  backdrop-filter:blur(18px);
+  box-shadow:0 20px 60px rgba(0,0,0,.25);
+  transition:.3s ease;
+}
+
+.tw-card:hover{
+  box-shadow:0 28px 70px rgba(0,0,0,.35);
+}
+
+:root[data-theme="light"] .tw-card{
+  background:rgba(255,255,255,.75);
+}
+
+.tw-card-body{
+  padding:36px;
+}
+
+.tw-card-compact .tw-card-body{
+  padding:24px;
+}
+
+.tw-hero-bg{
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(124,58,237,.25), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(59,130,246,.25), transparent 40%);
+  opacity:.6;
+  pointer-events:none;
+}
+
+
+/* =========================================================
+   Section Headers
+   ========================================================= */
+
+.tw-hero-header{
+  display:flex;
+  gap:16px;
+  align-items:center;
+  margin-bottom:28px;
+}
+
+.tw-hero-icon{
+  width:56px;
+  height:56px;
+  display:grid;
+  place-items:center;
+  border-radius:18px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  font-size:24px;
+  color:white;
+  box-shadow:0 10px 25px rgba(124,58,237,.4);
+}
+
+.tw-hero-title{
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:.3px;
+}
+
+.tw-hero-sub{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+
+/* =========================================================
+   Inputs
+   ========================================================= */
+
+.tw-input{
+  padding:12px 16px;
+  border-radius:16px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.08);
+  color:var(--text);
+  transition:.2s ease;
+  min-width:180px;
+}
+
+:root[data-theme="light"] .tw-input{
+  background:#fff;
+}
+
+.tw-input:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 4px rgba(124,58,237,.15);
+}
+
+.tw-input-sm{
+  padding:8px 12px;
+  border-radius:12px;
+}
+
+
+/* =========================================================
+   Buttons
+   ========================================================= */
+
+.tw-btn{
+  padding:12px 18px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+  color:var(--text);
+  font-weight:700;
+  cursor:pointer;
+  transition:.25s ease;
+  backdrop-filter:blur(8px);
+
+  display:flex;                 /* было inline-flex */
+  align-items:center;
+  justify-content:center;       /* ВАЖНО */
+  text-align:center;            /* на всякий */
+  gap:8px;
+}
+
+.tw-btn:hover{
+  background:rgba(255,255,255,.12);
+  border-color:rgba(124,58,237,.4);
+  box-shadow:0 8px 24px rgba(124,58,237,.15);
+  transform:translateY(-1px);
+}
+
+.tw-btn:active{
+  transform:translateY(0);
+}
+
+.tw-btn-primary{
+  border:none;
+  color:white;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 18px 35px rgba(124,58,237,.35);
+}
+
+.tw-btn-primary:hover{
+  box-shadow:0 24px 50px rgba(124,58,237,.45);
+}
+
+.tw-btn-danger{
+  border:1px solid rgba(239,68,68,.4);
+  background:rgba(239,68,68,.08);
+  color:#f87171;
+}
+
+.tw-btn-danger:hover{
+  background:rgba(239,68,68,.15);
+  box-shadow:0 10px 24px rgba(239,68,68,.25);
+}
+
+.tw-btn-ghost{
+  background:transparent;
+  border:1px solid var(--line);
+}
+
+.tw-btn-mini{
+  padding:8px 12px;
+  border-radius:14px;
+  font-size:13px;
+}
+
+
+/* =========================================================
+   Badges / Pills
+   ========================================================= */
+
+.tw-pill{
+  font-size:11px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:rgba(239,68,68,.12);
+  border:1px solid rgba(239,68,68,.4);
+  color:#fca5a5;
+}
+
+.tw-badge{
+  font-size:11px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.25);
+  font-weight:700;
+}
+
+
+/* =========================================================
+   Tables
+   ========================================================= */
+
+.tw-table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.tw-table th{
+  text-align:left;
+  font-size:12px;
+  color:var(--muted);
+  padding:12px 10px;
+  letter-spacing:.4px;
+}
+
+.tw-table td{
+  padding:14px 10px;
+  border-top:1px solid var(--line);
+}
+
+.tw-table tr{
+  transition:.2s ease;
+}
+
+.tw-table tr:hover{
+  background:rgba(124,58,237,.08);
+}
+
+
+/* =========================================================
+   Status blocks
+   ========================================================= */
+
+.tw-status-success{ color:#22c55e; }
+.tw-status-danger{ color:#ef4444; }
+.tw-status-warning{ color:#f59e0b; }
+
+
+/* =========================================================
+   Flash messages
+   ========================================================= */
+
+.tw-flashes{
+  display:grid;
+  gap:12px;
+}
+
+.tw-alert{
+  display:flex;
+  gap:12px;
+  padding:14px 16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.08);
+  border:1px solid var(--line);
+}
+
+.tw-alert-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  margin-top:6px;
+  background:var(--accent);
+}
+
+.tw-alert-text{
+  font-weight:700;
+  font-size:13px;
+}
+
+.tw-alert-success .tw-alert-dot{ background:#22c55e; }
+.tw-alert-danger  .tw-alert-dot{ background:#ef4444; }
+.tw-alert-warning .tw-alert-dot{ background:#f59e0b; }
+
+/* =========================
+   Vertical Form Layout
+========================= */
+
+.tw-form-vertical{
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+  max-width:100%;
+}
+
+.tw-field{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.tw-label{
+  font-size:13px;
+  font-weight:700;
+  color:var(--muted);
+}
+
+.tw-input-lg{
+  padding:16px 18px;
+  border-radius:18px;
+  font-size:15px;
+}
+
+.tw-form-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:10px;
+}
+
+/* Fix select dropdown colors */
+
+.tw-input select,
+select.tw-input {
+  color: var(--text);
+  background: rgba(255,255,255,.08);
+}
+
+:root[data-theme="light"] select.tw-input {
+  background: #fff;
+  color: #111;
+}
+
+/* КРИТИЧНО — цвет option */
+select.tw-input option {
+  background: #1f2937;   /* нормальный тёмный фон */
+  color: #f9fafb;        /* светлый текст */
+}
+
+:root[data-theme="light"] select.tw-input option {
+  background: #ffffff;
+  color: #111827;
+}
+
+/* =========================
+   Group Block
+========================= */
+
+.tw-group-block{
+  padding:24px;
+  border-radius:20px;
+  border:1px solid rgba(124,58,237,.25);
+  background: linear-gradient(
+    135deg,
+    rgba(124,58,237,.08),
+    rgba(59,130,246,.06)
+  );
+}
+
+:root[data-theme="light"] .tw-group-block{
+  background: linear-gradient(
+    135deg,
+    rgba(124,58,237,.06),
+    rgba(59,130,246,.05)
+  );
+}
+
+/* =========================
+   Switch (premium)
+========================= */
+
+.tw-switch{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+}
+
+.tw-switch input{
+  display:none;
+}
+
+.tw-switch-slider{
+  width:52px;
+  height:28px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.12);
+  position:relative;
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.tw-switch-slider:after{
+  content:"";
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  position:absolute;
+  top:50%;
+  left:4px;
+  transform:translateY(-50%);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  transition:.2s ease;
+  box-shadow:0 8px 20px rgba(124,58,237,.4);
+}
+
+.tw-switch input:checked + .tw-switch-slider{
+  box-shadow:0 0 0 4px rgba(124,58,237,.15);
+}
+
+.tw-switch input:checked + .tw-switch-slider:after{
+  left:26px;
+}
+
+/* =========================
+   Multi Select Fix
+========================= */
+
+select[multiple].tw-input{
+  min-height: 180px;
+  padding: 12px;
+  border-radius: 18px;
+  overflow-y: auto;
+}
+
+/* делаем опции более читаемыми */
+select[multiple].tw-input option{
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+/* hover внутри списка */
+select[multiple].tw-input option:hover{
+  background: rgba(124,58,237,.15);
+}
+
+/* =========================
+   Multi Select Selected State
+========================= */
+
+select[multiple].tw-input option:checked {
+  background: linear-gradient(
+    135deg,
+    rgba(124,58,237,.35),
+    rgba(59,130,246,.25)
+  );
+  color: #ffffff;
+}
+
+:root[data-theme="light"] select[multiple].tw-input option:checked {
+  background: linear-gradient(
+    135deg,
+    rgba(124,58,237,.18),
+    rgba(59,130,246,.15)
+  );
+  color: #111827;
+}
+
+.tw-badge-group{
+  background: rgba(34,197,94,.12);
+  border: 1px solid rgba(34,197,94,.35);
+  color: #22c55e;
+}
+
+/* =========================
+   Group Toggle Animation
+========================= */
+
+.tw-group-content{
+  overflow: hidden;
+  transition:
+    opacity .25s ease,
+    transform .25s ease,
+    max-height .3s ease;
+  max-height: 500px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tw-group-content.hidden{
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
+/* =========================================================
+   Empty state
+   ========================================================= */
+
+.tw-empty{
+  text-align:center;
+  padding:60px 20px;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.tw-status{
+  padding:20px;
+  border-radius:18px;
+  background: rgba(255,255,255,.06);
+  border:1px solid var(--line);
+}
+
+.tw-status-online{
+  color:#22c55e;
+  font-weight:800;
+}
+
+.tw-status-offline{
+  opacity:.6;
+  font-weight:700;
+}
+
+/* =========================
+   Info block
+========================= */
+
+.tw-info{
+  padding:18px 20px;
+  border-radius:18px;
+  background: rgba(124,58,237,.08);
+  border:1px solid rgba(124,58,237,.25);
+  line-height:1.6;
+}
+
+:root[data-theme="light"] .tw-info{
+  background: rgba(124,58,237,.06);
+}
+
+/* =========================
+   Links
+========================= */
+
+.tw-link{
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(124,58,237,.5);
+  transition: .2s ease;
+}
+
+.tw-link:hover{
+  border-bottom-style: solid;
+  color: var(--accent2);
+}
+
+/* =========================================================
+   Utilities
+   ========================================================= */
+
+.tw-mono{
+  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.tw-spacer-sm{ height:12px; }
+.tw-spacer-md{ height:24px; }
+.tw-spacer-lg{ height:40px; }
+
+.tw-divider{
+  height:1px;
+  background:var(--line);
+  margin:24px 0;
+}
+
+
+
+/* =========================================================
+   HERO CARD (для премиум-блоков)
+   ========================================================= */
+
+.tw-card-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.tw-card-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(168,85,247,.25), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(59,130,246,.25), transparent 45%);
+  opacity: .7;
+  pointer-events: none;
+}
+
+.tw-card-hero .tw-card-body {
+  position: relative;
+  z-index: 2;
+}
+
+/* =========================================================
+   BADGES
+   ========================================================= */
+
+.tw-badge {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.tw-badge-premium {
+  background: linear-gradient(135deg,#a855f7,#7c3aed);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(124,58,237,.35);
+}
+
+.tw-badge-basic {
+  background: linear-gradient(135deg,#3b82f6,#2563eb);
+  color: #fff;
+}
+
+.tw-badge-econom {
+  background: rgba(148,163,184,.25);
+}
+
+.tw-badge-danger {
+  background: rgba(239,68,68,.15);
+  color: #ef4444;
+}
+
+/* =========================================================
+   API KEY WRAP
+   ========================================================= */
+
+.tw-key-wrap {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tw-key-field {
+  flex: 1;
+  min-width: 280px;
+  font-family: monospace;
+  letter-spacing: .5px;
+}
+
+.tw-btn-primary {
+  background: linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow: 0 18px 40px rgba(124,58,237,.35);
+  transition: .25s ease;
+}
+
+.tw-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 55px rgba(124,58,237,.45);
+}
+
+/* =========================================================
+   AUTH PAGE (isolated)
+   ========================================================= */
+
+.auth-page{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.auth-card{
+  position:relative;
+  width:100%;
+  max-width:420px;
+  padding:40px;
+  border-radius:24px;
+
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.06);
+  backdrop-filter:blur(20px);
+
+  box-shadow:0 30px 80px rgba(0,0,0,.35);
+}
+
+:root[data-theme="light"] .auth-card{
+  background:rgba(255,255,255,.85);
+  border:1px solid var(--line);
+}
+
+.auth-theme-btn{
+  position:absolute;
+  top:18px;
+  right:18px;
+}
+
+.auth-logo{
+  width:200px;
+  margin:0 auto 26px auto;
+  display:flex;
+  justify-content:center;
+}
+
+.auth-logo img{
+  width:100%;
+  object-fit:contain;
+}
+
+.auth-legal{
+  margin-top:30px;
+  padding-top:18px;
+  border-top:1px solid var(--line);
+  text-align:center;
+}
+
+.auth-links{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+
+.auth-links a{
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+  color:var(--accent);
+}
+
+.auth-meta{
+  font-size:11px;
+  color:var(--muted);
+}
+
+/* ================= TOAST ================= */
+
+.tw-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.tw-toast {
+  min-width: 260px;
+  max-width: 360px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  backdrop-filter: blur(14px);
+  background: rgba(25, 25, 25, 0.9);
+  color: #fff;
+  font-size: 14px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.35s ease;
+  pointer-events: auto;
+}
+
+.tw-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Цвета */
+
+.tw-toast-success {
+  border-left: 4px solid #3bd671;
+}
+
+.tw-toast-error {
+  border-left: 4px solid #ff4d4f;
+}
+
+.tw-toast-info {
+  border-left: 4px solid #4da6ff;
+}

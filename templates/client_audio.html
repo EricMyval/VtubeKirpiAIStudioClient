@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Аудио клиента{% endblock %}
+{% block page_title %}🎧 Аудио клиента{% endblock %}
+{% block page_subtitle %}Настройка устройства вывода{% endblock %}
+
+{% block content %}
+
+<div class="tw-page">
+
+  <div class="tw-card">
+    <div class="tw-card-body">
+
+      <div class="tw-hero-header">
+        <div class="tw-hero-icon">🎧</div>
+        <div>
+          <div class="tw-hero-title">Устройство вывода</div>
+          <div class="tw-hero-sub">
+            Выберите устройство, через которое будет воспроизводиться голос персонажа
+          </div>
+        </div>
+      </div>
+
+      <form method="POST"
+            action="{{ url_for('client_audio.save') }}"
+            class="tw-form-vertical">
+
+        <div class="tw-field">
+          <label class="tw-label">Доступные устройства</label>
+
+          <select name="output_device"
+                  class="tw-input tw-input-lg">
+
+            <option value="">-- Выберите устройство --</option>
+
+            {% for d in output_devices %}
+              <option value="{{ d.name }}"
+                {% if d.name == current_device %}selected{% endif %}>
+                {{ d.name }}
+              </option>
+            {% endfor %}
+
+          </select>
+        </div>
+
+        <div class="tw-form-actions">
+          <button type="submit"
+                  class="tw-btn tw-btn-primary">
+            💾 Сохранить
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

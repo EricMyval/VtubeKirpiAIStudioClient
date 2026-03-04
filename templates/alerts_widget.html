@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Alerts Widget</title>
+
+<style>
+html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background: transparent;
+    overflow:hidden;
+    font-family: Arial, sans-serif;
+}
+
+#alert-root{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+}
+
+.alert-wrap{
+    position:relative;
+    max-width:90%;
+    max-height:90%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+}
+
+/* ============================= */
+/* ТЕКСТ */
+/* ============================= */
+
+.alert-text{
+    text-align:center;
+    z-index:2;
+    color:#ffffff;
+    -webkit-text-stroke:1px #000;
+    text-shadow:
+        0 0 6px rgba(0,0,0,0.9),
+        0 0 12px rgba(0,0,0,0.6);
+}
+
+.alert-title{
+    font-weight:700;
+    margin-bottom:8px;
+}
+
+.alert-message{
+    white-space: pre-wrap;
+}
+
+/* ============================= */
+/* МЕДИА */
+/* ============================= */
+
+.alert-media{
+    max-width:100%;
+    max-height:60vh;
+    object-fit:contain;
+}
+
+.alert-media-bg{
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    object-fit:cover;
+    z-index:0;
+}
+
+.alert-wrap.bg-text-bottom{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:6vh;
+    max-width:100%;
+    justify-content:flex-end;
+    pointer-events:none;
+}
+
+.inline-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.inline-wrap .alert-text{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    z-index:2;
+}
+</style>
+</head>
+<body>
+
+<div id="alert-root"></div>
+
+<script>
+
+let isShowing = false;
+let clearTimer = null;
+
+setInterval(pollAlert, 300);
+
+async function pollAlert(){
+
+    if(isShowing) return;
+
+    try{
+        const r = await fetch("/alerts/pull", { cache:"no-store" });
+        const j = await r.json();
+
+        if(j.ok && j.data){
+            showAlert(j.data);
+        }
+
+    }catch(e){}
+}
+
+/* ------------------------------------------------ */
+
+let alertAudio = null;
+
+function playAlertSound(path) {
+
+    if (!path) return;
+
+    try {
+
+        if (alertAudio) {
+            alertAudio.pause();
+            alertAudio.currentTime = 0;
+        }
+
+        if (!alertAudio) {
+            alertAudio = document.createElement("audio");
+            document.body.appendChild(alertAudio);
+        }
+
+        alertAudio.src = path;
+        alertAudio.volume = 1.0;
+
+        alertAudio.play().catch(err => {
+            console.log("AUDIO PLAY ERROR:", err);
+        });
+
+    } catch (e) {
+        console.log("AUDIO EXCEPTION:", e);
+    }
+}
+
+function showAlert(data){
+
+    isShowing = true;
+
+    if(clearTimer){
+        clearTimeout(clearTimer);
+        clearTimer = null;
+    }
+
+    const root = document.getElementById("alert-root");
+    root.innerHTML = "";
+
+    let videoEl = null;
+
+    const position = data.media?.position || "top";
+
+    const wrap = document.createElement("div");
+    wrap.className = "alert-wrap";
+
+    const textBlock = buildText(data);
+
+    /* ---------- layout ---------- */
+
+    if(position === "background" && data.media?.path){
+
+        wrap.classList.add("bg-text-bottom");
+
+        const bg = buildMedia(data, true);
+        if(bg && bg.tagName === "VIDEO") videoEl = bg;
+
+        root.appendChild(bg);
+        wrap.appendChild(textBlock);
+        root.appendChild(wrap);
+
+    }else if(position === "inline" && data.media?.path){
+
+        const inline = document.createElement("div");
+        inline.className = "inline-wrap";
+
+        const media = buildMedia(data, false);
+        if(media && media.tagName === "VIDEO") videoEl = media;
+
+        inline.appendChild(media);
+        inline.appendChild(textBlock);
+
+        wrap.appendChild(inline);
+        root.appendChild(wrap);
+
+    }else if(position === "bottom" && data.media?.path){
+
+        const media = buildMedia(data, false);
+        if(media && media.tagName === "VIDEO") videoEl = media;
+
+        wrap.appendChild(textBlock);
+        wrap.appendChild(media);
+        root.appendChild(wrap);
+
+    }else if(position === "fullscreen" && data.media?.path){
+
+        const media = buildMedia(data, true);
+        if(media && media.tagName === "VIDEO") videoEl = media;
+
+        root.appendChild(media);
+
+    }else{
+
+        if(data.media?.path){
+            const media = buildMedia(data, false);
+            if(media && media.tagName === "VIDEO") videoEl = media;
+            wrap.appendChild(media);
+        }
+
+        wrap.appendChild(textBlock);
+        root.appendChild(wrap);
+    }
+
+    /* ---------- звук → браузер ---------- */
+
+    if(data.sound){
+        playAlertSound(data.sound);
+    }
+
+    /* ---------- lifetime ---------- */
+
+    if(videoEl){
+
+        videoEl.addEventListener("ended", clearAlert, { once:true });
+
+        videoEl.addEventListener("error", ()=>{
+            clearTimer = setTimeout(clearAlert, 8000);
+        }, { once:true });
+
+        return;
+    }
+
+    clearTimer = setTimeout(clearAlert, 8000);
+}
+
+/* ------------------------------------------------ */
+
+function clearAlert(){
+
+    if(!isShowing) return;
+
+    const root = document.getElementById("alert-root");
+    root.innerHTML = "";
+
+    isShowing = false;
+}
+
+/* ------------------------------------------------ */
+
+function buildText(data){
+
+    const box = document.createElement("div");
+    box.className = "alert-text";
+
+    const title = document.createElement("div");
+    title.className = "alert-title";
+    title.textContent = data.title || "";
+
+    if(data.style?.title){
+        const s = data.style.title;
+        if(s.font)  title.style.fontFamily = s.font;
+        if(s.size)  title.style.fontSize   = s.size + "px";
+        if(s.color) title.style.color      = s.color;
+    }
+
+    box.appendChild(title);
+
+    if(data.message){
+        const msg = document.createElement("div");
+        msg.className = "alert-message";
+        msg.textContent = data.message;
+
+        if(data.style?.message){
+            const s = data.style.message;
+            if(s.font)  msg.style.fontFamily = s.font;
+            if(s.size)  msg.style.fontSize   = s.size + "px";
+            if(s.color) msg.style.color      = s.color;
+        }
+
+        box.appendChild(msg);
+    }
+
+    return box;
+}
+
+/* ------------------------------------------------ */
+
+function buildMedia(data, fullscreen){
+
+    const path = data.media?.path || "";
+    const type = data.media?.type || "";
+
+    const isVideo =
+        type === "video" ||
+        path.match(/\.(mp4|webm|ogg)$/i);
+
+    let el;
+
+    if(isVideo){
+
+        el = document.createElement("video");
+        el.src = path;
+        el.autoplay = true;
+        el.muted = true;
+        el.playsInline = true;
+        el.loop = false;
+
+    }else{
+
+        el = document.createElement("img");
+        el.src = path;
+    }
+
+    el.className = fullscreen ? "alert-media-bg" : "alert-media";
+
+    return el;
+}
+
+</script>
+</body>
+</html>

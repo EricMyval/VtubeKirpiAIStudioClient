@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style>
+body{
+    margin:0;
+    font-family:system-ui;
+    background:#0f0f12;
+    color:#fff;
+}
+
+.task{
+    margin:10px;
+    padding:12px 14px;
+    border-radius:12px;
+    background:#1c1c22;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+button{
+    border:0;
+    border-radius:10px;
+    padding:6px 12px;
+    cursor:pointer;
+    background:#22c55e;
+    font-weight:800;
+}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script>
+const root = document.getElementById("root");
+
+async function removeTask(id){
+    await fetch("/overlay/roulette/api/tasks/" + id + "/delete", {
+        method:"POST"
+    });
+}
+
+async function load(){
+
+    const r = await fetch("/overlay/roulette/api/tasks");
+    const data = await r.json();
+
+    root.innerHTML = "";
+
+    for(const t of data){
+
+        const row = document.createElement("div");
+        row.className = "task";
+
+        const title = document.createElement("div");
+        title.textContent = t.title;
+
+        const btn = document.createElement("button");
+        btn.textContent = "✔";
+
+        btn.onclick = async () => {
+
+            const ok = confirm(
+                "Подтвердить выполнение задания?\n\n" + t.title
+            );
+
+            if(!ok) return;
+
+            await removeTask(t.id);
+        };
+
+        row.appendChild(title);
+        row.appendChild(btn);
+
+        root.appendChild(row);
+    }
+}
+
+setInterval(load, 500);
+load();
+</script>
+
+</body>
+</html>

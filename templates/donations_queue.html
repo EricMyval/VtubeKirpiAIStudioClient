@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Donations Queue</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    /* === OBS SAFE RESET === */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* === DARK PREMIUM BACKGROUND === */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", Roboto, Ubuntu, sans-serif;
+      color: #ffffff;
+
+      /* Современный тёмный фон */
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(255,255,255,0.04), transparent 60%),
+        radial-gradient(800px 400px at 90% 20%, rgba(255,255,255,0.03), transparent 60%),
+        linear-gradient(180deg, #0e0f13 0%, #0a0b0f 100%);
+    }
+
+    /* ===============================
+       Donations Queue Panel
+       =============================== */
+
+    .queue-card {
+      width: 100%;
+      max-width: 340px;
+
+      background: rgba(20, 20, 22, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 16px;
+
+      box-shadow:
+        0 20px 45px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 1px rgba(255,255,255,0.03);
+
+      backdrop-filter: blur(12px);
+    }
+
+    /* ===== Header ===== */
+
+    .queue-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .queue-icon {
+      font-size: 20px;
+    }
+
+    .queue-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    /* ===== Toggle button ===== */
+
+    .queue-toggle {
+      width: 100%;
+      height: 44px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      transition: all 0.18s ease;
+    }
+
+    .queue-toggle.running {
+      background: linear-gradient(135deg, #ff5a5a, #c92a2a);
+      color: #fff;
+    }
+
+    .queue-toggle.paused {
+      background: linear-gradient(135deg, #2ecc71, #1e9f55);
+      color: #fff;
+    }
+
+    .queue-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 26px rgba(0,0,0,0.55);
+    }
+
+    .queue-toggle:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    /* ===== Stats ===== */
+
+    .queue-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat {
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      opacity: 0.65;
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .stat-wide {
+      grid-column: span 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #aaa;
+      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+
+    .status-dot.running {
+      background: #2ecc71;
+    }
+
+    .status-dot.paused {
+      background: #e74c3c;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="queue-card">
+
+    <div class="queue-header">
+      <div class="queue-icon">⏸️</div>
+      <div class="queue-title">Очередь донатов</div>
+    </div>
+
+    <button id="toggleBtn" class="queue-toggle">
+      ...
+    </button>
+
+    <div class="queue-stats">
+      <div class="stat">
+        <div class="stat-label">В очереди</div>
+        <div class="stat-value" id="queueSize">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Всего событий</div>
+        <div class="stat-value" id="total">0</div>
+      </div>
+
+      <div class="stat stat-wide">
+        <div>
+          <div class="stat-label">Статус</div>
+          <div class="stat-value" id="status">...</div>
+        </div>
+        <div class="status-dot" id="statusDot"></div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+async function refresh() {
+  try {
+    const res = await fetch("/donations-queue/status", { cache: "no-store" });
+    const data = await res.json();
+
+    const enabled = !!data.donations_enabled;
+
+    document.getElementById("queueSize").textContent =
+      data.current_queue_size;
+
+    document.getElementById("total").textContent =
+      data.total_enqueued;
+
+    document.getElementById("status").textContent =
+      enabled ? "Запущены" : "На паузе";
+
+    const btn = document.getElementById("toggleBtn");
+    const dot = document.getElementById("statusDot");
+
+    btn.textContent = enabled
+      ? "⏸ Остановить донаты"
+      : "▶ Запустить донаты";
+
+    btn.className = "queue-toggle " + (enabled ? "running" : "paused");
+    dot.className = "status-dot " + (enabled ? "running" : "paused");
+
+  } catch (e) {
+    // тихо для OBS
+  }
+}
+
+document.getElementById("toggleBtn").onclick = async () => {
+  const enabled =
+    document.getElementById("status").textContent === "Запущены";
+
+  await fetch(
+    enabled
+      ? "/donations-queue/pause"
+      : "/donations-queue/resume",
+    { method: "POST" }
+  );
+
+  refresh();
+};
+
+setInterval(refresh, 1000);
+refresh();
+</script>
+
+</body>
+</html>

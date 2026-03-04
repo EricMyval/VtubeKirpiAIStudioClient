@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+
+<meta charset="utf-8">
+<title>Donate Panel</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='css/glass-ui.css') }}">
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='css/layout.css') }}">
+
+<style>
+/* OBS PANEL */
+
+body{
+    padding:12px;
+}
+
+.panel{
+    max-width:900px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.donation-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.donation-message{
+    margin-top:8px;
+    opacity:.85;
+}
+
+</style>
+
+</head>
+<body>
+
+
+<div class="panel">
+
+<!-- TOP BAR -->
+
+<div class="tw-card tw-card-compact" style="position:sticky;top:10px;z-index:50;">
+<div class="tw-card-body">
+
+<div class="tw-inline-between">
+
+<div class="tw-inline">
+
+<span id="statusDot"
+style="width:10px;height:10px;border-radius:50%;background:#aaa;"></span>
+
+<b id="queueStatus">...</b>
+
+<span style="opacity:.4">•</span>
+
+<span id="sessionTotal" class="tw-badge tw-badge-basic">
+0 ₽
+</span>
+
+</div>
+
+
+<div class="tw-inline">
+
+<label class="tw-switch">
+<input type="checkbox" id="afkCheckbox">
+<span class="tw-switch-slider"></span>
+</label>
+
+<span class="tw-label">AFK</span>
+
+<input id="filterInput"
+class="tw-input tw-input-sm"
+placeholder="Ник">
+
+<button id="toggleBtn"
+class="tw-btn tw-btn-mini">
+Pause
+</button>
+
+<button id="skipBtn"
+class="tw-btn tw-btn-danger tw-btn-mini">
+Skip
+</button>
+
+</div>
+
+</div>
+</div>
+</div>
+
+
+<!-- DONATIONS -->
+
+<div id="donationsList" class="donation-list"></div>
+
+
+<!-- TEST BAR -->
+
+<div class="tw-card tw-card-compact"
+style="position:sticky;bottom:10px">
+
+<div class="tw-card-body">
+
+<div class="tw-inline">
+
+<input id="testUser"
+class="tw-input tw-input-sm"
+placeholder="Имя">
+
+<input id="testAmount"
+class="tw-input tw-input-sm"
+type="number"
+min="1"
+placeholder="Сумма">
+
+<input id="testMessage"
+class="tw-input tw-input-sm"
+placeholder="Сообщение"
+style="flex:1">
+
+<button id="sendTest"
+class="tw-btn tw-btn-primary tw-btn-mini">
+➕
+</button>
+
+</div>
+
+</div>
+</div>
+
+</div>
+
+
+
+<script>
+
+const list = document.getElementById("donationsList")
+const filterInput = document.getElementById("filterInput")
+
+function renderDonation(d){
+
+return `
+<div class="tw-card tw-card-compact donation-item">
+<div class="tw-card-body">
+
+<div class="tw-inline-between">
+
+<div class="tw-inline">
+
+<b class="username">${d.username}</b>
+
+<span class="tw-badge">${d.platform}</span>
+
+<span style="color:#22c55e;font-weight:700">
+${d.amount}
+</span>
+
+</div>
+
+<button class="tw-btn tw-btn-mini"
+onclick="repeatDonate(${d.id})">
+repeat
+</button>
+
+</div>
+
+${d.message
+? `<div class="donation-message">${d.message}</div>`
+: ""}
+
+</div>
+</div>
+`
+
+}
+
+
+async function refresh(){
+
+const r = await fetch("/client/donate-panel/state")
+const data = await r.json()
+
+document.getElementById("sessionTotal").innerText =
+data.session_total + " ₽"
+
+document.getElementById("queueStatus").innerText =
+data.current ? "Идёт донат" : "Ожидание"
+
+document.getElementById("statusDot").style.background =
+data.current ? "#22c55e" : "#aaa"
+
+
+list.innerHTML = ""
+
+const filter = filterInput.value.toLowerCase()
+
+data.history.forEach(d => {
+
+if(filter && !d.username.toLowerCase().includes(filter))
+return
+
+list.innerHTML += renderDonation(d)
+
+})
+
+}
+
+
+async function repeatDonate(id){
+
+await fetch(
+"/client/donate-panel/repeat/"+id,
+{method:"POST"}
+)
+
+}
+
+
+document.getElementById("toggleBtn").onclick = async ()=>{
+
+await fetch("/client/donate-panel/pause",{method:"POST"})
+
+}
+
+document.getElementById("skipBtn").onclick = async ()=>{
+
+await fetch("/client/donate-panel/skip",{method:"POST"})
+
+}
+
+
+document.getElementById("sendTest").onclick = async ()=>{
+
+await fetch("/client/test-donate",{
+method:"POST",
+headers:{ "Content-Type":"application/json" },
+body:JSON.stringify({
+user:testUser.value,
+amount:testAmount.value,
+message:testMessage.value
+})
+})
+
+}
+
+filterInput.addEventListener("input", refresh)
+
+setInterval(refresh,2000)
+
+refresh()
+
+</script>
+
+
+</body>
+</html>
