@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, jsonify
 
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
-from modules.client.donate_panel.queue_runtime import donate_queue_runtime
 from modules.client.donate_panel.repository import DonateRepository
 
 
@@ -41,14 +40,12 @@ def state():
             "username": current.username,
             "platform": current.platform,
             "amount": current.amount,
-            "message": current.message
+            "message": current.message,
+            "status": current.status
         } if current else None,
 
         "session_total":
             donate_panel_service.get_session_total(),
-
-        "queue_size":
-            donate_queue_runtime.size(),
 
         "history": [
             {
@@ -56,40 +53,11 @@ def state():
                 "username": d.username,
                 "platform": d.platform,
                 "amount": d.amount,
-                "message": d.message
+                "message": d.message,
+                "status": d.status
             }
             for d in history
         ]
-
-    })
-
-
-# ==========================================================
-# NEXT
-# ==========================================================
-
-@bp.route("/next", methods=["POST"])
-def next_donate():
-
-    donate = donate_panel_service.next()
-
-    if not donate:
-        return jsonify({
-            "ok": True,
-            "donate": None
-        })
-
-    return jsonify({
-
-        "ok": True,
-
-        "donate": {
-            "id": donate.id,
-            "username": donate.username,
-            "platform": donate.platform,
-            "amount": donate.amount,
-            "message": donate.message
-        }
 
     })
 
@@ -113,9 +81,12 @@ def skip():
 @bp.route("/pause", methods=["POST"])
 def pause():
 
-    donate_panel_service.toggle_pause()
+    paused = donate_panel_service.toggle_pause()
 
-    return jsonify({"ok": True})
+    return jsonify({
+        "ok": True,
+        "paused": paused
+    })
 
 
 # ==========================================================

@@ -1,7 +1,4 @@
-from typing import Optional
-
 from .repository import DonateRepository
-from .queue_runtime import donate_queue_runtime
 from .donate_panel_state import donate_panel_state
 from .session_stats import donation_session_stats
 
@@ -9,101 +6,108 @@ from .session_stats import donation_session_stats
 class DonatePanelService:
 
     # ==========================================================
-    # API EVENT
+    # ADD DONATE FROM POLLER
     # ==========================================================
 
-    def add_from_event(self, event: dict):
+    def add_event_from_poller(self, event: dict):
+
+        amount = int(event.get("amount", 0) or 0)
+
+        if amount <= 0:
+            return
 
         username = event.get("username") or event.get("user") or "unknown"
         message = event.get("message") or ""
-        amount = int(event.get("amount", 0) or 0)
-
         platform = event.get("platform") or "unknown"
 
-        donate_id = DonateRepository.add(
+        DonateRepository.add(
             platform=platform,
             username=username,
             amount=amount,
             message=message,
         )
 
-        donate_queue_runtime.push(donate_id)
-
-        # если ничего не играет — запускаем донат
-        if not donate_panel_state.current_donate:
-            self.next()
+        donation_session_stats.add(amount)
 
     # ==========================================================
-    # current donate
+    # MARK PLAYING
     # ==========================================================
 
-    def get_current(self):
+    def mark_playing(self, event: dict):
 
-        return donate_panel_state.current_donate
+        amount = int(event.get("amount", 0) or 0)
 
-    # ==========================================================
-    # next donate
-    # ==========================================================
+        if amount <= 0:
+            return
 
-    def next(self):
+        username = event.get("username") or event.get("user") or "unknown"
 
-        donate_id = donate_queue_runtime.pop()
-
-        if not donate_id:
-            donate_panel_state.current_donate = None
-            return None
-
-        donate = DonateRepository.get_by_id(donate_id)
-
-        if not donate:
-            return None
-
-        DonateRepository.update_status(donate.id, "playing")
-
-        donate_panel_state.current_donate = donate
-
-        return donate
-
-    # ==========================================================
-    # finish donate
-    # ==========================================================
-
-    def finish(self):
-
-        donate = donate_panel_state.current_donate
+        donate = DonateRepository.find_last(username, amount)
 
         if not donate:
             return
 
-        DonateRepository.update_status(donate.id, "played")
+        DonateRepository.update_status(
+            donate.id,
+            "playing"
+        )
 
-        donate_panel_state.current_donate = None
+        donate_panel_state.set_current(donate)
 
     # ==========================================================
-    # skip
+    # MARK FINISHED
+    # ==========================================================
+
+    def mark_finished(self):
+
+        donate = donate_panel_state.get_current()
+
+        if not donate:
+            return
+
+        DonateRepository.update_status(
+            donate.id,
+            "played"
+        )
+
+        donate_panel_state.clear_current()
+
+    # ==========================================================
+    # SKIP
     # ==========================================================
 
     def skip(self):
 
-        donate = donate_panel_state.current_donate
+        donate = donate_panel_state.get_current()
 
         if not donate:
             return
 
-        DonateRepository.update_status(donate.id, "skipped")
+        DonateRepository.update_status(
+            donate.id,
+            "skipped"
+        )
 
-        donate_panel_state.current_donate = None
+        donate_panel_state.clear_current()
 
     # ==========================================================
-    # pause
+    # PAUSE
     # ==========================================================
 
     def toggle_pause(self):
 
-        donate_panel_state.paused = not donate_panel_state.paused
+        return donate_panel_state.toggle_pause()
 
     # ==========================================================
-    # stats
+    # CURRENT
+    # ==========================================================
+
+    def get_current(self):
+
+        return donate_panel_state.get_current()
+
+    # ==========================================================
+    # SESSION TOTAL
     # ==========================================================
 
     def get_session_total(self):
@@ -111,7 +115,7 @@ class DonatePanelService:
         return donation_session_stats.get_total()
 
     # ==========================================================
-    # history
+    # HISTORY
     # ==========================================================
 
     def get_history(self, limit=50):

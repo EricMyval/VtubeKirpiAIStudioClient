@@ -71,10 +71,36 @@ class DonateRepository:
         )
 
         row = cursor.fetchone()
-
         conn.close()
 
-        return Donate(**dict(row)) if row else None
+        return Donate.from_row(row)
+
+    # ==========================================================
+    # FIND LAST (для mark_playing)
+    # ==========================================================
+
+    @staticmethod
+    def find_last(username: str, amount: int) -> Optional[Donate]:
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM donations
+            WHERE username = ?
+            AND amount = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (username, amount),
+        )
+
+        row = cursor.fetchone()
+        conn.close()
+
+        return Donate.from_row(row)
 
     # ==========================================================
     # HISTORY
@@ -89,7 +115,7 @@ class DonateRepository:
         sql = """
             SELECT *
             FROM donations
-            ORDER BY created_at DESC
+            ORDER BY id DESC
         """
 
         if limit:
@@ -99,10 +125,9 @@ class DonateRepository:
             cursor.execute(sql)
 
         rows = cursor.fetchall()
-
         conn.close()
 
-        return [Donate(**dict(row)) for row in rows]
+        return [Donate.from_row(row) for row in rows]
 
     # ==========================================================
     # UPDATE STATUS

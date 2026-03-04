@@ -37,6 +37,36 @@ body{
     opacity:.85;
 }
 
+.donation-item.playing{
+    border:1px solid rgba(34,197,94,.6);
+    box-shadow:
+        0 0 0 2px rgba(34,197,94,.25),
+        0 10px 30px rgba(34,197,94,.15);
+    transition:all .25s ease;
+}
+
+.donation-item.playing .username{
+    color:#4ade80;
+}
+
+.donation-item.playing .tw-card-body{
+    background:rgba(34,197,94,.05);
+}
+
+.donation-message a{
+    color:#93c5fd;
+    text-decoration:underline;
+    word-break:break-word;
+}
+
+.donation-message a:hover{
+    color:#bfdbfe;
+}
+
+.donation-message a:visited{
+    color:#93c5fd;
+}
+
 </style>
 
 </head>
@@ -56,10 +86,6 @@ body{
 
 <span id="statusDot"
 style="width:10px;height:10px;border-radius:50%;background:#aaa;"></span>
-
-<b id="queueStatus">...</b>
-
-<span style="opacity:.4">•</span>
 
 <span id="sessionTotal" class="tw-badge tw-badge-basic">
 0 ₽
@@ -146,10 +172,28 @@ class="tw-btn tw-btn-primary tw-btn-mini">
 const list = document.getElementById("donationsList")
 const filterInput = document.getElementById("filterInput")
 
-function renderDonation(d){
+function linkify(text){
+
+if(!text) return ""
+
+const urlRegex = /(https?:\/\/[^\s]+)/g
+
+return text.replace(
+    urlRegex,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+)
+
+}
+
+function renderDonation(d, currentId){
+
+let stateClass = ""
+
+if(currentId && d.id === currentId)
+    stateClass = "playing"
 
 return `
-<div class="tw-card tw-card-compact donation-item">
+<div class="tw-card tw-card-compact donation-item ${stateClass}">
 <div class="tw-card-body">
 
 <div class="tw-inline-between">
@@ -161,7 +205,7 @@ return `
 <span class="tw-badge">${d.platform}</span>
 
 <span style="color:#22c55e;font-weight:700">
-${d.amount}
+${d.amount} ₽
 </span>
 
 </div>
@@ -174,17 +218,23 @@ repeat
 </div>
 
 ${d.message
-? `<div class="donation-message">${d.message}</div>`
+? `<div class="donation-message">${linkify(d.message)}</div>`
 : ""}
 
 </div>
 </div>
 `
-
 }
 
 
 async function refresh(){
+
+const selection = window.getSelection()
+
+/* если пользователь выделяет текст — не обновляем */
+if(selection && selection.type === "Range"){
+    return
+}
 
 const r = await fetch("/client/donate-panel/state")
 const data = await r.json()
@@ -192,25 +242,24 @@ const data = await r.json()
 document.getElementById("sessionTotal").innerText =
 data.session_total + " ₽"
 
-document.getElementById("queueStatus").innerText =
-data.current ? "Идёт донат" : "Ожидание"
-
 document.getElementById("statusDot").style.background =
 data.current ? "#22c55e" : "#aaa"
 
-
-list.innerHTML = ""
-
 const filter = filterInput.value.toLowerCase()
+const currentId = data.current ? data.current.id : null
+
+let html = ""
 
 data.history.forEach(d => {
 
 if(filter && !d.username.toLowerCase().includes(filter))
-return
+    return
 
-list.innerHTML += renderDonation(d)
+html += renderDonation(d, currentId)
 
 })
+
+list.innerHTML = html
 
 }
 

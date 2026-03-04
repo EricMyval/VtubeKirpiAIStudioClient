@@ -1,20 +1,44 @@
+import threading
+
+
 class DonationSessionStats:
 
     def __init__(self):
-        self.total_amount = 0
+
+        self._lock = threading.Lock()
+        self._total_amount = 0
+
+    # ======================================
+    # RESET
+    # ======================================
 
     def reset(self):
-        self.total_amount = 0
+
+        with self._lock:
+            self._total_amount = 0
+
+    # ======================================
+    # ADD
+    # ======================================
 
     def add(self, amount: int):
 
         try:
-            self.total_amount += int(amount)
+            value = int(amount)
         except Exception:
-            pass
+            return
+
+        with self._lock:
+            self._total_amount += value
+
+    # ======================================
+    # GET TOTAL
+    # ======================================
 
     def get_total(self) -> int:
-        return self.total_amount
+
+        with self._lock:
+            return int(self._total_amount)
 
 
 donation_session_stats = DonationSessionStats()

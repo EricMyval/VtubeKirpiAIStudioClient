@@ -11,14 +11,14 @@ from modules.client.alerts.alert_service import alert_service
 from modules.client.alerts.alert_queue import push_alert
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
 
-DEFAULT_WS_ADDRESS = "ws://127.0.0.1:19190/"
-
 
 class ClientWorker:
 
     def __init__(self, queue):
+
         self.queue = queue
-        self.ws_address = DEFAULT_WS_ADDRESS
+        self.ws_address = "ws://127.0.0.1:19190/"
+
         self.thread = threading.Thread(
             target=self._loop,
             daemon=True
@@ -32,10 +32,7 @@ class ClientWorker:
     # ======================================
 
     def set_ws_address(self, url: str):
-        """
-        Обновляет WebSocket адрес,
-        если сервер прислал новый.
-        """
+
         if url and url != self.ws_address:
             print(f"🌐 WS address updated: {url}")
             self.ws_address = url
@@ -43,7 +40,9 @@ class ClientWorker:
     # ======================================
 
     def _loop(self):
+
         while True:
+
             event = self.queue.get_event()
 
             try:
@@ -59,49 +58,90 @@ class ClientWorker:
 
         amount = int(event.get("amount", 0) or 0)
 
-        # DONATE PANEL
-        donate_panel_service.add_from_event(event)
+        is_donate = amount > 0
 
+        # ======================================
+        # DONATE PANEL START
+        # ======================================
+
+        if is_donate:
+            donate_panel_service.mark_playing(event)
+
+        # ======================================
         # ALERT
+        # ======================================
+
         if event.get("alert"):
+
             payload = alert_service.build_payload(event)
             push_alert(payload)
 
+        # ======================================
         # START WS COMMANDS
+        # ======================================
+
         self._execute_ws_command_list(event.get("start_commands", []))
 
+        # ======================================
         # IMAGE
+        # ======================================
+
         if event.get("image_url"):
+
             show_message_image(
                 event["image_url"],
                 amount
             )
 
+        # ======================================
         # ROULETTE
-        if amount > 0:
+        # ======================================
+
+        if is_donate:
+
             roulette_runtime.add_amount(amount)
 
+        # ======================================
         # TTS
+        # ======================================
+
         text = event.get("formatted_text")
         voice_file_path = event.get("voice_file_path")
         voice_reference_text = event.get("voice_reference_text")
 
         if text and voice_file_path and voice_reference_text:
+
             try:
+
                 file_path = tts_create_file(
                     text,
                     voice_file_path,
                     voice_reference_text
                 )
+
                 play_sound(file_path)
+
             except Exception as e:
                 print(f"[TTS] error: {e}")
 
+        # ======================================
         # WS COMMANDS
+        # ======================================
+
         self._execute_ws_command_list(event.get("ws_commands", []))
 
+        # ======================================
         # END WS COMMANDS
+        # ======================================
+
         self._execute_ws_command_list(event.get("end_commands", []))
+
+        # ======================================
+        # DONATE PANEL END
+        # ======================================
+
+        if is_donate:
+            donate_panel_service.mark_finished()
 
     # ======================================
 
@@ -127,8 +167,10 @@ class ClientWorker:
             delay = cmd.get("delay", 0)
 
             if command_text:
+
                 try:
                     send_ws_command(command_text, self.ws_address)
+
                 except Exception as e:
                     print(f"[WS] send error: {e}")
 
