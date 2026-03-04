@@ -3,6 +3,7 @@ import time
 
 from modules.afk.afk_state import afk_state
 from modules.client.roulette.runtime import roulette_runtime
+from modules.client.runtime.client_queue import clientEventQueue
 from modules.client.runtime.ws_client import send_ws_command
 from modules.client.tts.tts_runtime import tts_runtime
 from modules.donation_image.donation_image import show_message_image
@@ -97,7 +98,6 @@ class ClientWorker:
         # ======================================
 
         if is_donate:
-
             roulette_runtime.add_amount(amount)
 
         # ======================================
@@ -173,3 +173,6 @@ class ClientWorker:
 
             if delay and delay > 0:
                 time.sleep(delay)
+
+clientWorker = ClientWorker(clientEventQueue)
+clientWorker.start()

@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, jsonify
-
+from flask import Blueprint, render_template
+import requests
+from flask import request
+from modules.client.cabinet.service import get_api_key
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
 from modules.client.donate_panel.repository import DonateRepository
+from modules.client.runtime.constant import DONATE_URL
 from modules.client.tts.tts_runtime import tts_runtime
-
+from flask import jsonify
 
 bp = Blueprint(
     "client_donate_panel",
@@ -107,8 +110,78 @@ def pause():
 @bp.route("/repeat/<int:donate_id>", methods=["POST"])
 def repeat(donate_id):
 
-    ok = DonateRepository.repeat(donate_id)
+    donate = DonateRepository.get_by_id(donate_id)
+
+    if not donate:
+        return jsonify({"ok": False})
+
+    try:
+        api_key = get_api_key()
+        requests.post(
+            DONATE_URL,
+            headers={
+                "X-API-KEY": api_key,
+                "Content-Type": "application/json"
+            },
+            json={
+                "user": donate.username,
+                "amount": donate.amount,
+                "message": donate.message
+            },
+            timeout=10
+        )
+
+    except Exception as e:
+
+        return jsonify({
+            "ok": False,
+            "error": str(e)
+        })
+
+    return jsonify({"ok": True})
+
+# ==========================================================
+# SEND TEST DONATE
+# ==========================================================
+
+@bp.route("/send", methods=["POST"])
+def send():
+    data = request.json or {}
+    username = data.get("user")
+    amount = data.get("amount")
+    message = data.get("message")
+
+    if not username or not amount:
+        return jsonify({
+            "ok": False,
+            "error": "user required"
+        })
+
+    try:
+
+        api_key = get_api_key()
+
+        requests.post(
+            DONATE_URL,
+            headers={
+                "X-API-KEY": api_key,
+                "Content-Type": "application/json"
+            },
+            json={
+                "user": username,
+                "amount": amount,
+                "message": message
+            },
+            timeout=10
+        )
+
+    except Exception as e:
+
+        return jsonify({
+            "ok": False,
+            "error": str(e)
+        })
 
     return jsonify({
-        "ok": ok
+        "ok": True
     })

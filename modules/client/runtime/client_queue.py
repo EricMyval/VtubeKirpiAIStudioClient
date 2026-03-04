@@ -18,3 +18,5 @@ class ClientEventQueue:
 
     def task_done(self):
         self._queue.task_done()
+
+clientEventQueue = ClientEventQueue()

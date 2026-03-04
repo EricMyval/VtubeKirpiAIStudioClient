@@ -1,18 +1,12 @@
 import requests
 import time
-
 from modules.client.cabinet.service import get_api_key
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
-
-
-API_URL = "https://kirpi-gpt.ru/api/client/poll"
-POLL_INTERVAL = 2.0
-
+from modules.client.runtime.constant import POLL_INTERVAL, API_URL
 
 class ClientPoller:
 
     def __init__(self, queue, worker):
-
         self.queue = queue
         self.worker = worker
 

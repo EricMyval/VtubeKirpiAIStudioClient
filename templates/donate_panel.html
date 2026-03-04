@@ -73,6 +73,19 @@ body{
     color:#93c5fd;
 }
 
+.repeat-loader{
+    width:18px;
+    height:18px;
+    border:2px solid rgba(255,255,255,.25);
+    border-top:2px solid #fff;
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+}
+
+@keyframes spin{
+    from{ transform:rotate(0deg) }
+    to{ transform:rotate(360deg) }
+}
 </style>
 
 </head>
@@ -219,6 +232,7 @@ ${d.amount} ₽
 </div>
 
 <button class="tw-btn tw-btn-mini"
+id="repeatBtn-${d.id}"
 onclick="repeatDonate(${d.id})">
 repeat
 </button>
@@ -305,10 +319,36 @@ list.innerHTML = html
 
 async function repeatDonate(id){
 
+const btn = document.getElementById("repeatBtn-"+id)
+
+if(!btn) return
+
+/* блокируем кнопку */
+
+btn.disabled = true
+btn.innerHTML = `<div class="repeat-loader"></div>`
+
+/* отправляем запрос */
+
+try{
+
 await fetch(
 "/client/donate-panel/repeat/"+id,
 {method:"POST"}
 )
+
+}catch(e){
+console.error(e)
+}
+
+/* защита от спама — 5 секунд */
+
+setTimeout(()=>{
+
+btn.disabled = false
+btn.innerText = "repeat"
+
+},5000)
 
 }
 
@@ -338,17 +378,29 @@ await fetch("/client/donate-panel/skip",{method:"POST"})
 
 /* TEST DONATE */
 
+const testUser = document.getElementById("testUser")
+const testAmount = document.getElementById("testAmount")
+const testMessage = document.getElementById("testMessage")
+
 document.getElementById("sendTest").onclick = async ()=>{
 
-await fetch("/client/test-donate",{
+const user = testUser.value
+const amount = testAmount.value
+const message = testMessage.value
+
+await fetch("/client/donate-panel/send",{
 method:"POST",
 headers:{ "Content-Type":"application/json" },
 body:JSON.stringify({
-user:testUser.value,
-amount:testAmount.value,
-message:testMessage.value
+user:user,
+amount:amount,
+message:message
 })
 })
+
+testUser.value=""
+testAmount.value=""
+testMessage.value=""
 
 }
 

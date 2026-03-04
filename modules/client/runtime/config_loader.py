@@ -1,9 +1,7 @@
 # modules/client/config_loader.py
-
 import requests
 from modules.client.cabinet.service import get_api_key
-
-BASE_URL = "https://kirpi-gpt.ru/api/client/widgets"
+from modules.client.runtime.constant import WIDGETS_URL
 
 
 class ClientConfigLoader:
@@ -17,7 +15,7 @@ class ClientConfigLoader:
 
         try:
             response = requests.get(
-                f"{BASE_URL}/{endpoint}",
+                f"{WIDGETS_URL}/{endpoint}",
                 headers={"X-API-KEY": api_key},
                 timeout=15
             )
