@@ -209,7 +209,7 @@ return text.replace(
 function renderDonation(d, currentId){
 
 let stateClass = ""
-if(currentId && d.id === currentId)
+if(currentId && String(d.id) === String(currentId))
     stateClass = "playing"
 
 let actionButton = ""
@@ -300,9 +300,9 @@ function updatePlayingState(currentId){
 
 document.querySelectorAll(".donation-item").forEach(el => {
 
-const id = Number(el.dataset.id)
+const id = el.dataset.id
 
-if(currentId && id === currentId){
+if(currentId && String(id) === String(currentId)){
     el.classList.add("playing")
 }else{
     el.classList.remove("playing")
@@ -318,7 +318,8 @@ async function refresh(){
 
 const r = await fetch("/client/donate-panel/state")
 const data = await r.json()
-    if(data.paused){
+
+if(data.paused){
     toggleBtn.innerText = "Continue"
 }else{
     toggleBtn.innerText = "Pause"
@@ -368,12 +369,8 @@ const btn = document.getElementById("repeatBtn-"+id)
 
 if(!btn) return
 
-/* блокируем кнопку */
-
 btn.disabled = true
 btn.innerHTML = `<div class="repeat-loader"></div>`
-
-/* отправляем запрос */
 
 try{
 
@@ -385,8 +382,6 @@ await fetch(
 }catch(e){
 console.error(e)
 }
-
-/* защита от спама — 5 секунд */
 
 setTimeout(()=>{
 
@@ -413,7 +408,6 @@ if(data.paused){
 }
 
 }
-
 
 document.getElementById("skipBtn").onclick = async ()=>{
 
@@ -459,11 +453,9 @@ setInterval(refresh,2000)
 
 refresh()
 
-
+/* AFK */
 
 const afkCheckbox = document.getElementById("afkCheckbox")
-
-/* AFK STATUS */
 
 async function loadAFK(){
 
@@ -479,8 +471,6 @@ console.error(e)
 }
 
 }
-
-/* AFK TOGGLE */
 
 afkCheckbox.addEventListener("change", async ()=>{
 
@@ -504,8 +494,7 @@ console.error(e)
 
 loadAFK()
 
-
-
+/* DONATE CONTROL */
 
 async function startDonate(id){
 
@@ -530,8 +519,6 @@ ws_url:"ws://127.0.0.1:19190/"
 )
 
 }
-
-
 
 </script>
 

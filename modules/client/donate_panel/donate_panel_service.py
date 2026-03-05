@@ -85,11 +85,9 @@ class DonatePanelService:
         if not donate.raw_event:
             return False
 
-        import json
-
         event = json.loads(donate.raw_event)
 
-        # ВАЖНО: передаем ID доната
+        # передаем ID доната
         event["_donate_id"] = donate_id
 
         clientEventQueue.add_event(event)
@@ -103,7 +101,6 @@ class DonatePanelService:
     def image_continue(self, ws_url: str):
 
         hide_message_image(ws_url)
-
         image_gate.release()
 
     # ==========================================================
@@ -111,13 +108,13 @@ class DonatePanelService:
     # ==========================================================
 
     def mark_playing(self, event: dict):
+
         print("PLAYING", event.get("_donate_id"))
-        donate_id = event.get("_donate_id")
 
-        if not donate_id:
-            return
+        username = event.get("user") or event.get("username")
+        amount = int(event.get("amount", 0) or 0)
 
-        donate = DonateRepository.get_by_id(donate_id)
+        donate = DonateRepository.find_last(username, amount)
 
         if not donate:
             return
@@ -134,7 +131,9 @@ class DonatePanelService:
     # ==========================================================
 
     def mark_finished(self):
+
         print("FINISHED")
+
         donate = donate_panel_state.get_current()
 
         if not donate:
