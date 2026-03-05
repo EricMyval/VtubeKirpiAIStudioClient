@@ -3,51 +3,150 @@ import os
 import subprocess
 import sys
 import shutil
+import zipfile
+import urllib.request
+
+# -------------------------------------------------
+# GITHUB
+# -------------------------------------------------
+
+GITHUB_REPO = "https://github.com/EricMyval/VtubeKirpiAIStudioClient"
+GITHUB_ZIP = "https://codeload.github.com/EricMyval/VtubeKirpiAIStudioClient/zip/refs/heads/master"
 
 # -------------------------------------------------
 # base directory
 # -------------------------------------------------
+
 if getattr(sys, "frozen", False):
     BASE_DIR = os.path.dirname(sys.executable)
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 VENV_DIR = os.path.join(BASE_DIR, "venv")
-
 PYTHON = os.path.join(VENV_DIR, "Scripts", "python.exe")
 
 MARKER_FILE = os.path.join(VENV_DIR, ".kirpi_installed")
 TORCH_MARKER = os.path.join(VENV_DIR, ".torch_installed")
 
-
 # -------------------------------------------------
 # helpers
 # -------------------------------------------------
+
 def run(cmd):
     subprocess.check_call(cmd)
 
+# -------------------------------------------------
+# update client from github
+# -------------------------------------------------
+
+def update_client():
+
+    print("🌐 Checking for client updates...")
+
+    zip_path = os.path.join(BASE_DIR, "client_update.zip")
+    extract_dir = os.path.join(BASE_DIR, "_update")
+
+    try:
+
+        urllib.request.urlretrieve(GITHUB_ZIP, zip_path)
+
+        if os.path.exists(extract_dir):
+            shutil.rmtree(extract_dir)
+
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+
+        extracted_root = os.path.join(
+            extract_dir,
+            os.listdir(extract_dir)[0]
+        )
+
+        for item in os.listdir(extracted_root):
+
+            if item in ["venv", ".git"]:
+                continue
+
+            src = os.path.join(extracted_root, item)
+            dst = os.path.join(BASE_DIR, item)
+
+            if os.path.isdir(src):
+
+                if not os.path.exists(dst):
+                    shutil.copytree(src, dst)
+
+                else:
+                    for root, dirs, files in os.walk(src):
+                        rel = os.path.relpath(root, src)
+                        dst_root = os.path.join(dst, rel)
+
+                        os.makedirs(dst_root, exist_ok=True)
+
+                        for f in files:
+                            shutil.copy2(
+                                os.path.join(root, f),
+                                os.path.join(dst_root, f)
+                            )
+
+            else:
+                shutil.copy2(src, dst)
+
+        shutil.rmtree(extract_dir)
+        os.remove(zip_path)
+
+        print("✅ Client updated")
+
+    except Exception as e:
+
+        print("⚠️ Update failed:", e)
 
 # -------------------------------------------------
-# find system python
+# find system python (FIXED)
 # -------------------------------------------------
+
 def find_python():
 
-    python_cmd = shutil.which("python")
+    # 1️⃣ сначала проверяем py launcher
+    py = shutil.which("py")
 
-    if python_cmd:
-        return python_cmd
+    if py:
+        try:
+            out = subprocess.check_output(
+                [py, "-3", "-c", "import sys;print(sys.executable)"],
+                text=True
+            ).strip()
 
-    python_cmd = shutil.which("py")
+            if os.path.exists(out):
+                return out
 
-    if python_cmd:
-        return python_cmd
+        except Exception:
+            pass
 
-    raise RuntimeError("Python not found on system.")
+    # 2️⃣ обычный python
+    python = shutil.which("python")
 
+    if python and "WindowsApps" not in python:
+        return python
+
+    # 3️⃣ проверяем стандартные папки Python
+    possible = [
+
+        r"C:\Python311\python.exe",
+        r"C:\Python310\python.exe",
+
+        os.path.expandvars(r"%LOCALAPPDATA%\Programs\Python\Python311\python.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\Programs\Python\Python310\python.exe"),
+    ]
+
+    for p in possible:
+        if os.path.exists(p):
+            return p
+
+    raise RuntimeError("Python not found.")
 
 # -------------------------------------------------
 # add ffmpeg
 # -------------------------------------------------
+
 def add_ffmpeg_to_path():
 
     ffmpeg_dir = os.path.join(BASE_DIR, "data", "ff_exe")
@@ -65,10 +164,10 @@ def add_ffmpeg_to_path():
 
     print("🎬 FFmpeg path added:", ffmpeg_dir)
 
-
 # -------------------------------------------------
 # create venv
 # -------------------------------------------------
+
 def create_venv():
 
     if os.path.exists(PYTHON):
@@ -80,10 +179,13 @@ def create_venv():
 
     run([python_cmd, "-m", "venv", VENV_DIR])
 
+    # ensure pip exists
+    run([PYTHON, "-m", "ensurepip"])
 
 # -------------------------------------------------
 # detect GPU
 # -------------------------------------------------
+
 def detect_gpu():
 
     try:
@@ -113,16 +215,18 @@ def detect_gpu():
 
     return "cpu"
 
-
 # -------------------------------------------------
 # install torch
 # -------------------------------------------------
+
 def install_torch(cuda):
 
     if os.path.exists(TORCH_MARKER):
         return
 
     print("🔥 Installing PyTorch:", cuda)
+
+    run([PYTHON, "-m", "pip", "install", "--upgrade", "pip"])
 
     if cuda == "cpu":
 
@@ -154,10 +258,10 @@ def install_torch(cuda):
 
     open(TORCH_MARKER, "w").close()
 
-
 # -------------------------------------------------
 # install requirements
 # -------------------------------------------------
+
 def install_requirements():
 
     req_file = os.path.join(BASE_DIR, "requirements.txt")
@@ -175,17 +279,15 @@ def install_requirements():
 
     print("📦 Installing requirements...")
 
-    run([PYTHON, "-m", "pip", "install", "--upgrade", "pip"])
-
     run([PYTHON, "-m", "pip", "install", "-r", req_file])
 
     with open(MARKER_FILE, "w") as f:
         f.write(req_hash)
 
-
 # -------------------------------------------------
 # run client
 # -------------------------------------------------
+
 def run_client():
 
     print("🚀 Starting Kirpi AI Client")
@@ -198,17 +300,17 @@ def run_client():
         env=env
     )
 
-
 # -------------------------------------------------
 # main
 # -------------------------------------------------
+
 def main():
+
+    update_client()
 
     add_ffmpeg_to_path()
 
     create_venv()
-
-    add_ffmpeg_to_path()
 
     cuda = detect_gpu()
 
@@ -218,10 +320,10 @@ def main():
 
     run_client()
 
-
 # -------------------------------------------------
 # entry
 # -------------------------------------------------
+
 if __name__ == "__main__":
 
     try:
