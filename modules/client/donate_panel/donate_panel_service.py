@@ -114,9 +114,24 @@ class DonatePanelService:
         username = event.get("user") or event.get("username")
         amount = int(event.get("amount", 0) or 0)
 
-        donate = DonateRepository.find_last(username, amount)
+        donate = None
+
+        # сначала пытаемся найти точное совпадение
+        if username and amount:
+            donate = DonateRepository.find_last(username, amount)
+
+        # fallback — просто последний донат
+        if not donate:
+            history = DonateRepository.get_all(1)
+            if history:
+                donate = history[0]
 
         if not donate:
+            return
+
+        # если уже playing — не обновляем
+        if donate.status == "playing":
+            donate_panel_state.set_current(donate)
             return
 
         DonateRepository.update_status(
