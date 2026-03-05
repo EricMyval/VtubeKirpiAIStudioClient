@@ -1,4 +1,6 @@
 import threading
+import webbrowser
+import time
 from flask import render_template
 
 from modules.web_admin import app
@@ -43,5 +45,14 @@ def start_web_admin():
 
     th = threading.Thread(target=_run, daemon=True)
     th.start()
+
+    # даём серверу время стартовать
+    time.sleep(1)
+
+    # открываем браузер
+    try:
+        webbrowser.open(f"http://{host}:{port}/")
+    except Exception as e:
+        print("Не удалось открыть браузер:", e)
 
     return th
