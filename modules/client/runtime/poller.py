@@ -5,6 +5,7 @@ from modules.client.donate_panel.donate_panel_service import donate_panel_servic
 from modules.client.runtime.constant import POLL_INTERVAL, API_URL, PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI, \
     PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, PLATFORM_TYPE_TWITCH_VOICE, \
     PLATFORM_TYPE_TWITCH_AI, PLATFORM_TYPE_TWITCH_POINTS
+from modules.client.runtime.ws_client import send_ws_command
 
 
 class ClientPoller:
@@ -66,8 +67,6 @@ class ClientPoller:
                 events = data.get("events") or []
 
                 for event in events:
-
-                    amount = int(event.get("amount", 0) or 0)
                     platform = event.get("platform")
                     message = event.get("message")
 
@@ -91,8 +90,12 @@ class ClientPoller:
                     if add_to_panel:
                         donate_panel_service.add_event_from_poller(event)
 
-                    # событие всегда отправляем воркеру
-                    self.queue.add_event(event)
+                    # если просто ивент за баллы, сразу отдаем в вебсокет
+                    if platform == PLATFORM_TYPE_TWITCH_POINTS:
+                        send_ws_command(event.get("reward"), ws_address)
+                    # остальные событие всегда отправляем воркеру
+                    else:
+                        self.queue.add_event(event)
 
             except Exception as e:
 

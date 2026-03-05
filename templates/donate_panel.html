@@ -420,6 +420,51 @@ setInterval(refresh,2000)
 
 refresh()
 
+
+
+const afkCheckbox = document.getElementById("afkCheckbox")
+
+/* AFK STATUS */
+
+async function loadAFK(){
+
+try{
+
+const r = await fetch("/client/afk/status")
+const data = await r.json()
+
+afkCheckbox.checked = data.afk_enabled
+
+}catch(e){
+console.error(e)
+}
+
+}
+
+/* AFK TOGGLE */
+
+afkCheckbox.addEventListener("change", async ()=>{
+
+try{
+
+if(afkCheckbox.checked){
+
+await fetch("/client/afk/enable")
+
+}else{
+
+await fetch("/client/afk/disable")
+
+}
+
+}catch(e){
+console.error(e)
+}
+
+})
+
+loadAFK()
+
 </script>
 
 </body>

@@ -1,4 +1,3 @@
-# modules/client/config_loader.py
 import requests
 from modules.client.cabinet.service import get_api_key
 from modules.client.runtime.constant import WIDGETS_URL
@@ -44,3 +43,9 @@ class ClientConfigLoader:
     @staticmethod
     def load_roulette_config() -> dict:
         return ClientConfigLoader._get("roulette")
+
+    # ---------------- TIMER ----------------
+
+    @staticmethod
+    def load_timer_config() -> dict:
+        return ClientConfigLoader._get("timer")

@@ -1,129 +1,108 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>OBS Timer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>OBS Timer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    /* === OBS SAFE RESET === */
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: transparent;
-      overflow: hidden;
-    }
+<style>
 
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
+/* OBS SAFE RESET */
 
-    /* === TIMER === */
-    .timer {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-                   "Liberation Mono", "Courier New", monospace;
-      font-weight: 900;
-      font-size: clamp(48px, 8vw, 120px);
-      letter-spacing: 0.08em;
-      color: #ffffff;
+html, body{
+margin:0;
+padding:0;
+background:transparent;
+overflow:hidden;
+}
 
-      /* тень для читаемости в OBS */
-      text-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.55),
-        0 0 18px rgba(0, 0, 0, 0.35);
+body{
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
+}
 
-      user-select: none;
-      white-space: nowrap;
-    }
+/* TIMER */
 
-    /* optional: краснеет при отрицательном времени */
-    .timer.negative {
-      color: #ff4d4d;
-    }
-  </style>
+.timer{
+
+font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+"Liberation Mono", "Courier New", monospace;
+
+font-weight:900;
+
+font-size:clamp(48px, 8vw, 120px);
+
+letter-spacing:0.08em;
+
+color:#ffffff;
+
+text-shadow:
+0 2px 8px rgba(0,0,0,.55),
+0 0 18px rgba(0,0,0,.35);
+
+user-select:none;
+white-space:nowrap;
+
+opacity:0;
+transition:opacity .25s ease;
+
+}
+
+.timer.visible{
+opacity:1;
+}
+
+</style>
 </head>
 <body>
 
-  <div id="timer" class="timer">{{ current_time }}</div>
+<div id="timer" class="timer">
+00:30:00
+</div>
 
- <script>
-(function () {
-  const el = document.getElementById('timer');
+<script>
 
-  let serverSeconds = null;
-  let displaySeconds = null;
-  let isRunning = false;
+const timerEl = document.getElementById("timer")
 
-  const SMOOTH_SPEED = 10; // чем больше — тем быстрее догоняем (8–15 идеально)
+let lastTime = null
 
-  function format(sec) {
-    const s = Math.max(0, Math.floor(sec));
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const ss = s % 60;
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-  }
+async function refresh(){
 
-  async function syncFromServer() {
-    try {
-      const r = await fetch('/timer/status', { cache: 'no-store' });
-      const data = await r.json();
+try{
 
-      isRunning = !!data.is_running;
+const r = await fetch("/client/timer/status",{cache:"no-store"})
+const data = await r.json()
 
-      if (!isRunning) {
-        el.style.display = 'none';
-        serverSeconds = null;
-        displaySeconds = null;
-        return;
-      }
+if(!data.is_running){
 
-      el.style.display = 'block';
+timerEl.classList.remove("visible")
+return
 
-      serverSeconds = Number(data.remaining_seconds);
+}
 
-      // первая инициализация
-      if (displaySeconds === null) {
-        displaySeconds = serverSeconds;
-      }
+timerEl.classList.add("visible")
 
-    } catch (e) {
-      // тихо
-    }
-  }
+if(data.time !== lastTime){
 
-  function renderLoop() {
-    if (isRunning && serverSeconds !== null && displaySeconds !== null) {
+timerEl.innerText = data.time
+lastTime = data.time
 
-      const diff = serverSeconds - displaySeconds;
+}
 
-      // если рассинхрон большой — телепорт (например reset / set_time)
-      if (Math.abs(diff) > 2) {
-        displaySeconds = serverSeconds;
-      } else {
-        // плавное сближение
-        displaySeconds += diff * 0.15;
-      }
+}catch(e){
+// тихо игнорируем
+}
 
-      el.textContent = format(displaySeconds);
-    }
+}
 
-    requestAnimationFrame(renderLoop);
-  }
+/* LOOP */
 
-  // старт
-  syncFromServer();
-  setInterval(syncFromServer, 1000); // сервер — каждую секунду
-  renderLoop();
-})();
+setInterval(refresh,1000)
+refresh()
+
 </script>
-
-
-
-
 
 </body>
 </html>

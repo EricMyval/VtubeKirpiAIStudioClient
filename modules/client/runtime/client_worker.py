@@ -1,12 +1,12 @@
 import threading
 import time
-
-from modules.afk.afk_state import afk_state
+from modules.client.afk.afk_state import afk_state
+from modules.client.pets.pet_runtime import handle_pet
 from modules.client.roulette.runtime import roulette_runtime
 from modules.client.runtime.client_queue import clientEventQueue
-from modules.client.runtime.constant import PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, \
-    PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI, PLATFORM_TYPE_TWITCH_VOICE, PLATFORM_TYPE_TWITCH_AI
+from modules.client.runtime.constant import PLATFORM_TYPE_AFK_START, PLATFORM_TYPE_AFK_STOP, PLATFORM_TYPE_TWITCH_POINTS
 from modules.client.runtime.ws_client import send_ws_command
+from modules.client.timer.timer_service import TimerService
 from modules.client.tts.tts_runtime import tts_runtime
 from modules.donation_image.donation_image import show_message_image
 from modules.client.alerts.alert_service import alert_service
@@ -57,9 +57,8 @@ class ClientWorker:
     # ======================================
 
     def _execute_event(self, event: dict):
-
+        platform = event.get("platform")
         amount = int(event.get("amount", 0) or 0)
-
         is_donate = amount > 0
 
         # ======================================
@@ -67,6 +66,22 @@ class ClientWorker:
         # ======================================
 
         donate_panel_service.mark_playing(event)
+
+        # ======================================
+        # AFK
+        # ======================================
+
+        if platform and platform in {
+            PLATFORM_TYPE_AFK_START,
+            PLATFORM_TYPE_AFK_STOP
+        }:
+            self._execute_ws_command_list([
+                {
+                    "command": event.get("reward"),
+                    "delay": 0,
+                    "afk_only": False
+                }
+            ], True)
 
         # ======================================
         # ALERT
@@ -88,7 +103,6 @@ class ClientWorker:
         # ======================================
 
         if event.get("image_url"):
-
             show_message_image(
                 event["image_url"],
                 amount
@@ -102,17 +116,24 @@ class ClientWorker:
             roulette_runtime.add_amount(amount)
 
         # ======================================
+        # PET
+        # ======================================
+
+        handle_pet(event, self.ws_address)
+
+        # ======================================
+        # TIMER DONATE
+        # ======================================
+
+        if is_donate:
+            TimerService.add_donate(amount)
+
+        # ======================================
         # TTS
         # ======================================
 
-        platform = event.get("platform")
-        if platform and platform in {
-            PLATFORM_TYPE_DONATION_ALERTS,
-            PLATFORM_TYPE_DONATION_ALERTS_AI,
-            PLATFORM_TYPE_DONATTY,
-            PLATFORM_TYPE_DONATTY_AI,
-            PLATFORM_TYPE_TWITCH_VOICE,
-            PLATFORM_TYPE_TWITCH_AI
+        if platform and platform not in {
+            PLATFORM_TYPE_TWITCH_POINTS
         }:
             text = event.get("formatted_text")
             voice_file_path = event.get("voice_file_path")
@@ -131,7 +152,7 @@ class ClientWorker:
         # WS COMMANDS
         # ======================================
 
-        self._execute_ws_command_list(event.get("ws_commands", []))
+        self._execute_ws_command_list(event.get("ws_commands", []), True)
 
         # ======================================
         # END WS COMMANDS
@@ -147,7 +168,7 @@ class ClientWorker:
 
     # ======================================
 
-    def _execute_ws_command_list(self, commands: list[dict]):
+    def _execute_ws_command_list(self, commands: list[dict], afk_ignore: bool = False):
 
         if not commands:
             return
@@ -162,8 +183,9 @@ class ClientWorker:
 
             afk_only = cmd.get("afk_only", False)
 
-            if afk_only and not afk_on:
-                continue
+            if not afk_ignore:
+                if afk_only and not afk_on:
+                    continue
 
             command_text = cmd.get("command")
             delay = cmd.get("delay", 0)

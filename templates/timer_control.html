@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+
+<meta charset="utf-8">
+<title>Таймер</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='css/glass-ui.css') }}">
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='css/layout.css') }}">
+
+<style>
+
+body{
+padding:10px;
+}
+
+/* PANEL */
+
+.panel{
+max-width:900px;
+margin:0 auto;
+}
+
+/* GRID */
+
+.timer-layout{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:20px;
+}
+
+/* TIMER */
+
+.timer-display{
+font-size:50px;
+font-weight:800;
+letter-spacing:2px;
+}
+
+/* TIMER COLUMN */
+
+.timer-col{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+/* RIGHT COLUMN */
+
+.controls-col{
+display:flex;
+flex-direction:column;
+gap:6px;
+}
+
+/* BUTTON ROW */
+
+.timer-controls{
+display:flex;
+gap:8px;
+}
+
+/* STATS */
+
+.timer-stats{
+display:flex;
+gap:8px;
+}
+
+/* STATUS DOT */
+
+.status-dot{
+width:10px;
+height:10px;
+border-radius:50%;
+background:#9ca3af;
+}
+
+.status-dot.running{
+background:#22c55e;
+box-shadow:0 0 8px rgba(34,197,94,.7);
+}
+
+</style>
+
+</head>
+<body>
+
+
+<div class="panel">
+
+<div class="tw-card tw-card-compact">
+<div class="tw-card-body">
+
+<div class="timer-layout">
+
+<!-- TIMER -->
+
+<div class="timer-col">
+
+<div id="statusDot" class="status-dot"></div>
+
+<div id="timer" class="timer-display">
+00:30:00
+</div>
+
+</div>
+
+
+<!-- CONTROLS -->
+
+<div class="controls-col">
+
+<div class="timer-controls">
+
+<button id="startBtn"
+class="tw-btn tw-btn-primary tw-btn-mini">
+Старт
+</button>
+
+<button id="stopBtn"
+class="tw-btn tw-btn-danger tw-btn-mini">
+Стоп
+</button>
+
+<button id="resetBtn"
+class="tw-btn tw-btn-mini">
+Сброс
+</button>
+
+</div>
+
+<div class="timer-stats">
+
+<button id="add5Btn"
+class="tw-btn tw-btn-mini">
++5 мин
+</button>
+
+<button id="minus5Btn"
+class="tw-btn tw-btn-mini">
+-5 мин
+</button>
+
+<span class="tw-badge">
+Тик
+<b id="tickVal">1</b>
+/ Буст
+<b id="boostVal">1.0</b>
+</span>
+
+</div>
+
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+
+
+<script>
+
+const timerEl = document.getElementById("timer")
+const tickVal = document.getElementById("tickVal")
+const boostVal = document.getElementById("boostVal")
+const statusDot = document.getElementById("statusDot")
+
+async function refresh(){
+
+try{
+
+const r = await fetch("/client/timer/status")
+const data = await r.json()
+
+timerEl.innerText = data.time
+
+tickVal.innerText = data.tick
+boostVal.innerText = data.donate_boost
+
+if(data.is_running){
+statusDot.classList.add("running")
+}else{
+statusDot.classList.remove("running")
+}
+
+}catch(e){
+console.error(e)
+}
+
+}
+
+/* BUTTONS */
+
+document.getElementById("startBtn").onclick = ()=>{
+fetch("/client/timer/start",{method:"POST"})
+}
+
+document.getElementById("stopBtn").onclick = ()=>{
+fetch("/client/timer/stop",{method:"POST"})
+}
+
+document.getElementById("resetBtn").onclick = ()=>{
+fetch("/client/timer/reset",{method:"POST"})
+}
+
+document.getElementById("add5Btn").onclick = ()=>{
+fetch("/client/timer/add5",{method:"POST"})
+}
+
+document.getElementById("minus5Btn").onclick = ()=>{
+fetch("/client/timer/minus5",{method:"POST"})
+}
+
+/* LOOP */
+
+setInterval(refresh,1000)
+refresh()
+
+</script>
+
+</body>
+</html>

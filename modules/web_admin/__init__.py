@@ -7,6 +7,8 @@ from modules.client.roulette.overlay_routes import bp as roulette_overlay_bp
 from modules.client.cabinet.routes import bp as client_cabinet_bp
 from modules.client.audio.routes import bp as client_audio_bp
 from modules.client.donate_panel.routes import bp as donate_panel_bp
+from modules.client.timer.timer_routes import bp as timer_bp
+from modules.client.afk.afk_routes import bp as afk_bp
 
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
@@ -20,3 +22,5 @@ app.register_blueprint(alerts_bp)
 app.register_blueprint(client_cabinet_bp)
 app.register_blueprint(client_audio_bp)
 app.register_blueprint(donate_panel_bp)
+app.register_blueprint(timer_bp)
+app.register_blueprint(afk_bp)

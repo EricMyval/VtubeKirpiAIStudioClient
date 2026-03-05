@@ -1,5 +1,4 @@
 # modules/donation_image/donation_image.py
-from modules.web_sockets.sender import send_ws_command
 import json
 from pathlib import Path
 
@@ -65,4 +64,4 @@ def show_message_image(message: str, amount: int):
     base_url = _load_web_admin_base_url()
     url = f"{base_url}/donation-image/{token}"
 
-    send_ws_command(f'{{"action":"donate_image_id_{voice_id}","data":"{url}"}}')
+    # send_ws_command(f'{{"action":"donate_image_id_{voice_id}","data":"{url}"}}')
