@@ -5,7 +5,7 @@ import sys
 import shutil
 import zipfile
 import urllib.request
-
+import ssl
 # -------------------------------------------------
 # GITHUB
 # -------------------------------------------------
@@ -47,6 +47,8 @@ def update_client():
     extract_dir = os.path.join(BASE_DIR, "_update")
 
     try:
+
+        ssl._create_default_https_context = ssl._create_unverified_context
 
         urllib.request.urlretrieve(GITHUB_ZIP, zip_path)
 
@@ -290,12 +292,21 @@ def install_requirements():
 
 def run_client():
 
+    main_file = os.path.join(BASE_DIR, "main.py")
+
+    if not os.path.exists(main_file):
+
+        print("❌ main.py not found")
+        print("Client files are missing or update failed.")
+        input("\nPress Enter to exit...")
+        return
+
     print("🚀 Starting Kirpi AI Client")
 
     env = os.environ.copy()
 
     subprocess.call(
-        [PYTHON, "main.py"],
+        [PYTHON, main_file],
         cwd=BASE_DIR,
         env=env
     )
