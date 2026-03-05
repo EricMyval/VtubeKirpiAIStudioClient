@@ -90,6 +90,7 @@ class ClientPoller:
                 for event in events:
 
                     platform = event.get("platform")
+                    ws_commands = event.get("ws_commands") or []
                     message = event.get("message")
                     image_url = event.get("image_url")
 
@@ -120,15 +121,19 @@ class ClientPoller:
                     if image_url:
                         continue
 
-                    # ======================================
-                    # TWITCH POINTS БЕЗ ТЕКСТА
-                    # ======================================
+                    # ==============================
+                    # Twitch Points fallback
+                    # ==============================
+                    if platform == PLATFORM_TYPE_TWITCH_POINTS and not ws_commands:
+                        reward = event.get("reward")
+                        if reward:
+                            send_ws_command(reward, ws_address)
+                        return
 
-                    if platform == PLATFORM_TYPE_TWITCH_POINTS:
-                        send_ws_command(event.get("reward"), ws_address)
-
-                    else:
-                        self.queue.add_event(event)
+                    # ==============================
+                    # Standard queue
+                    # ==============================
+                    self.queue.add_event(event)
 
             except Exception as e:
                 print(f"[Poller] error: {e}")
