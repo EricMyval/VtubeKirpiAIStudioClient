@@ -23,11 +23,21 @@ class AFKService:
             timeout=10
         )
 
+        # если доступ запрещён
+        if r.status_code == 403:
+
+            try:
+                data = r.json()
+            except Exception:
+                data = {"error": "access_denied"}
+
+            return data
+
         r.raise_for_status()
 
         data = r.json()
 
-        # синхронизируем локальное состояние
+        # синхронизация состояния
         if "afk_enabled" in data:
             afk_state.set_enabled(data["afk_enabled"])
 
@@ -37,19 +47,16 @@ class AFKService:
 
     @staticmethod
     def enable():
-
         return AFKService._get("enable")
 
     # ============================
 
     @staticmethod
     def disable():
-
         return AFKService._get("disable")
 
     # ============================
 
     @staticmethod
     def status():
-
         return AFKService._get("status")

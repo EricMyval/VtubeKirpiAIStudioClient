@@ -15,7 +15,6 @@ bp = Blueprint(
 
 @bp.route("/status")
 def status():
-
     return AFKService.status()
 
 
@@ -25,7 +24,6 @@ def status():
 
 @bp.route("/enable")
 def enable():
-
     return AFKService.enable()
 
 
@@ -35,5 +33,4 @@ def enable():
 
 @bp.route("/disable")
 def disable():
-
     return AFKService.disable()

@@ -22,6 +22,16 @@ class ClientPoller:
 
             try:
 
+                # ======================================
+                # QUEUE BACKPRESSURE
+                # ======================================
+
+                queue_size = self.queue.size()
+
+                if queue_size > 1:
+                    time.sleep(0.5)
+                    continue
+
                 api_key = get_api_key()
 
                 if not api_key:
@@ -67,6 +77,7 @@ class ClientPoller:
                 events = data.get("events") or []
 
                 for event in events:
+
                     platform = event.get("platform")
                     message = event.get("message")
 
@@ -90,10 +101,10 @@ class ClientPoller:
                     if add_to_panel:
                         donate_panel_service.add_event_from_poller(event)
 
-                    # если просто ивент за баллы, сразу отдаем в вебсокет
+                    # channel points без текста
                     if platform == PLATFORM_TYPE_TWITCH_POINTS:
                         send_ws_command(event.get("reward"), ws_address)
-                    # остальные событие всегда отправляем воркеру
+
                     else:
                         self.queue.add_event(event)
 

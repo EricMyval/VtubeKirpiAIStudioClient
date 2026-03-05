@@ -139,16 +139,16 @@ class ClientWorker:
             tts_runtime.play(first_segment)
 
         # ======================================
-        # WS COMMANDS
-        # ======================================
-
-        self._execute_ws_command_list(event.get("ws_commands", []))
-
-        # ======================================
         # END WS COMMANDS
         # ======================================
 
         self._execute_ws_command_list(event.get("end_commands", []))
+
+        # ======================================
+        # WS COMMANDS
+        # ======================================
+
+        self._execute_ws_command_list(event.get("ws_commands", []))
 
         # ======================================
         # DONATE PANEL END
