@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 
+from modules.client.runtime.config_loader import ClientConfigLoader
+
 
 @dataclass
 class TTSRuntimeConfig:
@@ -34,7 +36,6 @@ _runtime_config: TTSRuntimeConfig | None = None
 
 def init_tts_config(data: dict):
     global _runtime_config
-
     _runtime_config = TTSRuntimeConfig(**data)
 
 
@@ -42,3 +43,12 @@ def get_tts_config() -> TTSRuntimeConfig:
     if _runtime_config is None:
         raise RuntimeError("TTS config не инициализирован")
     return _runtime_config
+
+
+def bootstrap_tts():
+    try:
+        tts_data = ClientConfigLoader.load_tts_config()
+        init_tts_config(tts_data)
+        print("[TTS] Config loaded")
+    except Exception as e:
+        print("[TTS] Config load failed:", e)

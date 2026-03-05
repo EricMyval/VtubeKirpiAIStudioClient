@@ -4,14 +4,18 @@ from ..runtime.config_loader import ClientConfigLoader
 
 
 def bootstrap_timer():
+    tick = 1
+    donate_boost = 1.0
+    ws_url = ""
+    try:
+        config = ClientConfigLoader.load_timer_config()
+        tick = config.get("default_tick", 1)
+        donate_boost = config.get("default_donate_boost", 1.0)
+        ws_url = config.get("ws_soket")
+        print("[Timer] Config loaded")
+    except Exception as e:
+        print("[Timer] Config load failed:", e)
 
-    print("[Timer] loading config...")
-
-    config = ClientConfigLoader.load_timer_config()
-
-    tick = config.get("default_tick", 1)
-    donate_boost = config.get("default_donate_boost", 1.0)
-    ws_url = config.get("ws_soket")
 
     TimerService.apply_pets(
         tick=tick,

@@ -1,38 +1,47 @@
-# modules/web_admin.py
-import json
 import threading
-from pathlib import Path
 from flask import render_template
-from modules.web_admin import app
 
-CONFIG_PATH = Path("web_admin_config.json")
-DEFAULT_CONFIG = {"host": "127.0.0.1","port": 27027}
+from modules.web_admin import app
+from modules.web_admin.config import get_host, get_port, get_base_url
+
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-def _load_config():
-    try:
-        if CONFIG_PATH.exists():
-            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        else:
-            with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
-                json.dump(DEFAULT_CONFIG, f, indent=4)
-            return DEFAULT_CONFIG.copy()
-    except Exception as e:
-        print(f"Ошибка загрузки конфига: {e}, используются настройки по умолчанию")
-        return DEFAULT_CONFIG.copy()
 
+# ==========================================
+# BASE_URL для всех HTML
+# ==========================================
+
+@app.context_processor
+def inject_base_url():
+    return {
+        "BASE_URL": get_base_url()
+    }
+
+
+# ==========================================
+# SERVER START
+# ==========================================
 
 def start_web_admin():
-    config = _load_config()
-    host = config.get("host", "127.0.0.1")
-    port = config.get("port", 27027)
+
+    host = get_host()
+    port = get_port()
+
     def _run():
-        print(f"🌐 Веб-интерфейс доступен по адресу: http://{host}:{port}/")
-        app.run(host=host, port=port, debug=False, use_reloader=False)
+
+        print(f"🌐 Web Admin running: http://{host}:{port}/")
+
+        app.run(
+            host=host,
+            port=port,
+            debug=False,
+            use_reloader=False
+        )
+
     th = threading.Thread(target=_run, daemon=True)
     th.start()
+
     return th

@@ -1,17 +1,376 @@
 {% extends "base.html" %}
 
-{% block title %}Веб-чат с ассистентом{% endblock %}
-{% block page_title %}💬 Веб-чат{% endblock %}
-{% block page_subtitle %}Онлайн-общение с персонажем{% endblock %}
+{% block title %}Виджеты клиента{% endblock %}
+{% block page_title %}🧩 Виджеты клиента{% endblock %}
+{% block page_subtitle %}Оверлеи для OBS и браузера{% endblock %}
 
 {% block content %}
 
 <div class="tw-page">
-  <div class="tw-card">
-    <div class="tw-card-body">
-      <h2 style="margin:0;">ПРИВЕТ!</h2>
+
+
+<!-- =========================
+   HERO
+========================= -->
+
+<div class="tw-card tw-card-hero">
+  <div class="tw-card-body">
+
+    <div class="tw-hero-header">
+      <div class="tw-hero-icon">🧩</div>
+      <div>
+        <div class="tw-hero-title">Каталог виджетов</div>
+        <div class="tw-hero-sub">
+          Скопируйте ссылку и добавьте её в OBS как Browser Source
+        </div>
+      </div>
     </div>
+
   </div>
 </div>
+
+
+
+<!-- ======================================================
+   ДОНАТЫ
+====================================================== -->
+
+<div class="tw-card">
+  <div class="tw-card-body">
+
+    <div class="tw-hero-header">
+      <div class="tw-hero-icon">🎁</div>
+      <div>
+        <div class="tw-hero-title">Донаты</div>
+        <div class="tw-hero-sub">
+          Панель управления донатами и событиями
+        </div>
+      </div>
+    </div>
+
+    <div class="tw-widget-grid">
+
+      <div class="tw-card tw-widget-card">
+        <div class="tw-card-body">
+
+          <div class="tw-widget-header">
+            <div class="tw-widget-icon">🎁</div>
+            <div>
+              <div class="tw-widget-title">Админ панель донатов</div>
+              <div class="tw-widget-desc">
+                Отображение донатов, озвучка сообщений, изображения, управление AFK режимом
+              </div>
+            </div>
+          </div>
+
+          <div class="tw-widget-url"
+               data-url="{{ BASE_URL }}/client/donate-panel/">
+            {{ BASE_URL }}/client/donate-panel/
+          </div>
+
+          <div class="tw-widget-actions">
+            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
+            <a href="{{ BASE_URL }}/client/donate-panel/" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+
+<!-- ======================================================
+   РУЛЕТКА
+====================================================== -->
+
+<div class="tw-card">
+  <div class="tw-card-body">
+
+    <div class="tw-hero-header">
+      <div class="tw-hero-icon">🎰</div>
+      <div>
+        <div class="tw-hero-title">Рулетка</div>
+        <div class="tw-hero-sub">
+          Система заданий и рулетки для стрима
+        </div>
+      </div>
+    </div>
+
+    <div class="tw-widget-grid">
+
+      <!-- задания -->
+      <div class="tw-card tw-widget-card">
+        <div class="tw-card-body">
+
+          <div class="tw-widget-header">
+            <div class="tw-widget-icon">📋</div>
+            <div>
+              <div class="tw-widget-title">Задания</div>
+              <div class="tw-widget-desc">
+                Список заданий, которые видят зрители
+              </div>
+            </div>
+          </div>
+
+          <div class="tw-widget-url"
+               data-url="{{ BASE_URL }}/overlay/roulette/tasks">
+            {{ BASE_URL }}/overlay/roulette/tasks
+          </div>
+
+          <div class="tw-widget-actions">
+            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
+            <a href="{{ BASE_URL }}/overlay/roulette/tasks" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- админка -->
+      <div class="tw-card tw-widget-card">
+        <div class="tw-card-body">
+
+          <div class="tw-widget-header">
+            <div class="tw-widget-icon">🛠</div>
+            <div>
+              <div class="tw-widget-title">Админка заданий</div>
+              <div class="tw-widget-desc">
+                Панель управления заданиями для OBS
+              </div>
+            </div>
+          </div>
+
+          <div class="tw-widget-url"
+               data-url="{{ BASE_URL }}/overlay/roulette/tasks-admin">
+            {{ BASE_URL }}/overlay/roulette/tasks-admin
+          </div>
+
+          <div class="tw-widget-actions">
+            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
+            <a href="{{ BASE_URL }}/overlay/roulette/tasks-admin" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- прогресс -->
+      <div class="tw-card tw-widget-card">
+        <div class="tw-card-body">
+
+          <div class="tw-widget-header">
+            <div class="tw-widget-icon">📊</div>
+            <div>
+              <div class="tw-widget-title">Прогресс рулетки</div>
+              <div class="tw-widget-desc">
+                Отображение сбора рулетки
+              </div>
+            </div>
+          </div>
+
+          <div class="tw-widget-url"
+               data-url="{{ BASE_URL }}/overlay/roulette/progress">
+            {{ BASE_URL }}/overlay/roulette/progress
+          </div>
+
+          <div class="tw-widget-actions">
+            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
+            <a href="{{ BASE_URL }}/overlay/roulette/progress" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- анимация -->
+      <div class="tw-card tw-widget-card">
+        <div class="tw-card-body">
+
+          <div class="tw-widget-header">
+            <div class="tw-widget-icon">🎰</div>
+            <div>
+              <div class="tw-widget-title">Анимация рулетки</div>
+              <div class="tw-widget-desc">
+                Основная анимация вращения рулетки
+              </div>
+            </div>
+          </div>
+
+          <div class="tw-widget-url"
+               data-url="{{ BASE_URL }}/overlay/roulette/">
+            {{ BASE_URL }}/overlay/roulette/
+          </div>
+
+          <div class="tw-widget-actions">
+            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
+            <a href="{{ BASE_URL }}/overlay/roulette/" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+
+<!-- ======================================================
+   ALERTS
+====================================================== -->
+
+<div class="tw-card">
+  <div class="tw-card-body">
+
+    <div class="tw-hero-header">
+      <div class="tw-hero-icon">🔔</div>
+      <div>
+        <div class="tw-hero-title">Оповещения</div>
+        <div class="tw-hero-sub">
+          Алерты донатов и событий
+        </div>
+      </div>
+    </div>
+
+    <div class="tw-widget-grid">
+
+      <div class="tw-card tw-widget-card">
+        <div class="tw-card-body">
+
+          <div class="tw-widget-header">
+            <div class="tw-widget-icon">🔔</div>
+            <div>
+              <div class="tw-widget-title">Alerts Widget</div>
+              <div class="tw-widget-desc">
+                Донаты, изображения, видео, звук и текст
+              </div>
+            </div>
+          </div>
+
+          <div class="tw-widget-url"
+               data-url="{{ BASE_URL }}/alerts/widget">
+            {{ BASE_URL }}/alerts/widget
+          </div>
+
+          <div class="tw-widget-actions">
+            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
+            <a href="{{ BASE_URL }}/alerts/widget" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+
+<!-- ======================================================
+   TIMER
+====================================================== -->
+
+<div class="tw-card">
+  <div class="tw-card-body">
+
+    <div class="tw-hero-header">
+      <div class="tw-hero-icon">⏱</div>
+      <div>
+        <div class="tw-hero-title">Таймер</div>
+        <div class="tw-hero-sub">
+          Таймер стрима и обратного отсчёта
+        </div>
+      </div>
+    </div>
+
+    <div class="tw-widget-grid">
+
+      <div class="tw-card tw-widget-card">
+        <div class="tw-card-body">
+
+          <div class="tw-widget-header">
+            <div class="tw-widget-icon">⚙</div>
+            <div>
+              <div class="tw-widget-title">Панель таймера</div>
+              <div class="tw-widget-desc">
+                Управление таймером (админка OBS)
+              </div>
+            </div>
+          </div>
+
+          <div class="tw-widget-url"
+               data-url="{{ BASE_URL }}/client/timer">
+            {{ BASE_URL }}/client/timer
+          </div>
+
+          <div class="tw-widget-actions">
+            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
+            <a href="{{ BASE_URL }}/client/timer" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
+          </div>
+
+        </div>
+      </div>
+
+
+      <div class="tw-card tw-widget-card">
+        <div class="tw-card-body">
+
+          <div class="tw-widget-header">
+            <div class="tw-widget-icon">📺</div>
+            <div>
+              <div class="tw-widget-title">Таймер для зрителей</div>
+              <div class="tw-widget-desc">
+                Минимальный таймер для OBS сцены
+              </div>
+            </div>
+          </div>
+
+          <div class="tw-widget-url"
+               data-url="{{ BASE_URL }}/client/timer/obs">
+            {{ BASE_URL }}/client/timer/obs
+          </div>
+
+          <div class="tw-widget-actions">
+            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
+            <a href="{{ BASE_URL }}/client/timer/obs" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+</div>
+
+
+
+<script>
+
+function copyWidget(btn){
+
+  const card = btn.closest(".tw-widget-card")
+  const url = card.querySelector(".tw-widget-url").dataset.url
+
+  navigator.clipboard.writeText(url)
+
+  btn.innerText = "✅ Copied"
+
+  setTimeout(()=>{
+    btn.innerText = "📋 Copy"
+  },1500)
+}
+
+</script>
+
 
 {% endblock %}

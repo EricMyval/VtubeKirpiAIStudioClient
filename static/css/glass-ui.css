@@ -880,3 +880,77 @@ select[multiple].tw-input option:checked {
 .tw-toast-info {
   border-left: 4px solid #4da6ff;
 }
+
+/* =========================================================
+   WIDGET CARDS
+   ========================================================= */
+
+.tw-widget-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:22px;
+}
+
+.tw-widget-card{
+  transition:.25s ease;
+}
+
+.tw-widget-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 28px 70px rgba(0,0,0,.35);
+}
+
+.tw-widget-header{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+.tw-widget-icon{
+  width:44px;
+  height:44px;
+  border-radius:14px;
+  display:grid;
+  place-items:center;
+  font-size:20px;
+
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;
+
+  box-shadow:0 10px 25px rgba(124,58,237,.35);
+}
+
+.tw-widget-title{
+  font-size:17px;
+  font-weight:800;
+}
+
+.tw-widget-desc{
+  font-size:13px;
+  color:var(--muted);
+}
+
+.tw-widget-url{
+  margin:14px 0;
+  padding:10px 12px;
+  border-radius:12px;
+
+  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size:12px;
+
+  background:rgba(0,0,0,.35);
+  border:1px solid var(--line);
+
+  word-break:break-all;
+}
+
+:root[data-theme="light"] .tw-widget-url{
+  background:#f3f4f6;
+}
+
+.tw-widget-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}

@@ -73,6 +73,7 @@ def _init_f5():
 # ==========================================================
 
 def load_tts():
+    print("[TTS] loading TTS model...")
     _init_f5()
 
 

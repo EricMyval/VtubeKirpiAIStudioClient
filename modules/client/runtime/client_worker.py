@@ -98,7 +98,6 @@ class ClientWorker:
         # ======================================
 
         if event.get("alert"):
-
             payload = alert_service.build_payload(event)
             push_alert(payload)
 
