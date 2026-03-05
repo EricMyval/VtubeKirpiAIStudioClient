@@ -151,17 +151,17 @@ class ClientWorker:
         self._execute_ws_command_list(event.get("end_commands", []))
 
         # ======================================
+        # WS COMMANDS
+        # ======================================
+
+        self._execute_ws_command_list(event.get("ws_commands", []))
+
+        # ======================================
         # IMAGE WAIT (если есть картинка)
         # ======================================
 
         if event.get("image_url"):
             image_gate.wait()
-
-        # ======================================
-        # WS COMMANDS
-        # ======================================
-
-        self._execute_ws_command_list(event.get("ws_commands", []))
 
         # ======================================
         # DONATE PANEL END
