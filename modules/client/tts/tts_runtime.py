@@ -199,7 +199,8 @@ class TTSRuntime:
             samplerate=sr,
             channels=2,
             dtype="float32",
-            device=device_index
+            device=device_index,
+            extra_settings=sd.WasapiSettings(exclusive=False)
         )
 
         stream.start()
