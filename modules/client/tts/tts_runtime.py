@@ -210,9 +210,8 @@ class TTSRuntime:
         if data.ndim == 1:
             data = np.stack([data, data], axis=1)
 
-        chunk = 1024
-        pos = 0
-        total = len(data)
+        total_frames = len(data)
+        position = 0
 
         device_index = None
 
@@ -223,29 +222,44 @@ class TTSRuntime:
             except Exception as e:
                 print("[TTS] device resolve error:", e)
 
-        stream = self._open_stream(sr, device_index)
+        def callback(outdata, frames, time_info, status):
+            nonlocal position
 
-        stream.start()
+            if self.stop_event.is_set():
+                raise sd.CallbackStop()
+
+            if not self.pause_event.is_set():
+                outdata.fill(0)
+                return
+
+            end = position + frames
+            chunk = data[position:end]
+
+            if len(chunk) < frames:
+                outdata[:len(chunk)] = chunk
+                outdata[len(chunk):].fill(0)
+                raise sd.CallbackStop()
+            else:
+                outdata[:] = chunk
+
+            position = end
 
         try:
 
-            while pos < total:
+            with sd.OutputStream(
+                    samplerate=sr,
+                    channels=2,
+                    dtype="float32",
+                    device=device_index,
+                    callback=callback,
+                    blocksize=2048
+            ):
 
-                if self.stop_event.is_set():
-                    return
+                duration_ms = int((total_frames / sr) * 1000) + 100
+                sd.sleep(duration_ms)
 
-                while not self.pause_event.is_set():
-                    time.sleep(0.05)
-
-                end = min(pos + chunk, total)
-
-                stream.write(data[pos:end])
-
-                pos = end
-
-        finally:
-            stream.stop()
-            stream.close()
+        except Exception as e:
+            print("[TTS] playback error:", e)
 
 
 tts_runtime = TTSRuntime()
