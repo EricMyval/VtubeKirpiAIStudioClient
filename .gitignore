@@ -6,3 +6,6 @@ __pycache__/
 .env
 web_admin_config.json
 uploads/
+KirpiLauncher.spec
+build/
+dist/
