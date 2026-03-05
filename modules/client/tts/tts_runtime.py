@@ -7,6 +7,8 @@ import numpy as np
 import soundfile as sf
 import sounddevice as sd
 
+from modules.client.audio.devices import resolve_output_device_index
+from modules.client.audio.models import load_config
 from modules.client.tts.service import tts_create_file
 from modules.client.tts.tts_segmenter import split_text
 
@@ -14,6 +16,10 @@ from modules.client.tts.tts_segmenter import split_text
 class TTSRuntime:
 
     def __init__(self, device=None):
+
+        if device is None:
+            cfg = load_config()
+            device = cfg.get("output_device")
 
         self.device = device
 
@@ -26,6 +32,12 @@ class TTSRuntime:
 
         self.generator_thread = None
         self.player_thread = None
+
+    def reload_device(self):
+        from modules.client.audio.models import load_config
+        cfg = load_config()
+        self.device = cfg.get("output_device")
+        print("[TTS] device reloaded:", self.device)
 
     # =========================================
     # PREPARE (генерируем первый сегмент)
@@ -174,11 +186,20 @@ class TTSRuntime:
         pos = 0
         total = len(data)
 
+        device_index = None
+
+        if self.device:
+            try:
+                device_index = resolve_output_device_index(self.device)
+                print(f"[TTS] using device: {self.device} -> {device_index}")
+            except Exception as e:
+                print("[TTS] device resolve error:", e)
+
         stream = sd.OutputStream(
             samplerate=sr,
             channels=2,
             dtype="float32",
-            device=self.device
+            device=device_index
         )
 
         stream.start()

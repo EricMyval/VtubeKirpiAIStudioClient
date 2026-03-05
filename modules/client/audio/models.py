@@ -1,7 +1,6 @@
 # modules/client/audio/models.py
 
 import json
-from pathlib import Path
 from modules.utils.runtime_paths import app_root
 
 BASE_PATH = app_root()

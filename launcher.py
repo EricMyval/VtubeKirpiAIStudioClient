@@ -6,6 +6,7 @@ import shutil
 import zipfile
 import urllib.request
 import ssl
+
 # -------------------------------------------------
 # GITHUB
 # -------------------------------------------------
@@ -36,7 +37,23 @@ def run(cmd):
     subprocess.check_call(cmd)
 
 # -------------------------------------------------
-# update client from github
+# download file
+# -------------------------------------------------
+
+def download_file(url, dest):
+
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "KirpiAIStudio"}
+    )
+
+    with urllib.request.urlopen(req) as response, open(dest, "wb") as out_file:
+        shutil.copyfileobj(response, out_file)
+
+# -------------------------------------------------
+# update client
 # -------------------------------------------------
 
 def update_client():
@@ -48,28 +65,47 @@ def update_client():
 
     try:
 
-        ssl._create_default_https_context = ssl._create_unverified_context
+        print("⬇ Downloading client...")
 
-        urllib.request.urlretrieve(GITHUB_ZIP, zip_path)
+        download_file(GITHUB_ZIP, zip_path)
+
+        if not os.path.exists(zip_path) or os.path.getsize(zip_path) < 1000:
+            raise RuntimeError("Downloaded archive is invalid")
+
+        print("📦 Extracting update...")
 
         if os.path.exists(extract_dir):
             shutil.rmtree(extract_dir)
 
+        os.makedirs(extract_dir, exist_ok=True)
+
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
 
-        extracted_root = os.path.join(
-            extract_dir,
-            os.listdir(extract_dir)[0]
-        )
+        # find repo folder
+        repo_dir = None
 
-        for item in os.listdir(extracted_root):
+        for name in os.listdir(extract_dir):
+            path = os.path.join(extract_dir, name)
+            if os.path.isdir(path):
+                repo_dir = path
+                break
+
+        if not repo_dir:
+            raise RuntimeError("Repository folder not found in archive")
+
+        print("📂 Repository folder:", repo_dir)
+
+        # copy files
+        for item in os.listdir(repo_dir):
 
             if item in ["venv", ".git"]:
                 continue
 
-            src = os.path.join(extracted_root, item)
+            src = os.path.join(repo_dir, item)
             dst = os.path.join(BASE_DIR, item)
+
+            print("🔄 Updating:", item)
 
             if os.path.isdir(src):
 
@@ -77,19 +113,23 @@ def update_client():
                     shutil.copytree(src, dst)
 
                 else:
+
                     for root, dirs, files in os.walk(src):
+
                         rel = os.path.relpath(root, src)
                         dst_root = os.path.join(dst, rel)
 
                         os.makedirs(dst_root, exist_ok=True)
 
                         for f in files:
+
                             shutil.copy2(
                                 os.path.join(root, f),
                                 os.path.join(dst_root, f)
                             )
 
             else:
+
                 shutil.copy2(src, dst)
 
         shutil.rmtree(extract_dir)
@@ -102,12 +142,11 @@ def update_client():
         print("⚠️ Update failed:", e)
 
 # -------------------------------------------------
-# find system python (FIXED)
+# find system python
 # -------------------------------------------------
 
 def find_python():
 
-    # 1️⃣ сначала проверяем py launcher
     py = shutil.which("py")
 
     if py:
@@ -123,13 +162,11 @@ def find_python():
         except Exception:
             pass
 
-    # 2️⃣ обычный python
     python = shutil.which("python")
 
     if python and "WindowsApps" not in python:
         return python
 
-    # 3️⃣ проверяем стандартные папки Python
     possible = [
 
         r"C:\Python311\python.exe",
@@ -181,7 +218,6 @@ def create_venv():
 
     run([python_cmd, "-m", "venv", VENV_DIR])
 
-    # ensure pip exists
     run([PYTHON, "-m", "ensurepip"])
 
 # -------------------------------------------------
