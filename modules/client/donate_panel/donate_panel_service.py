@@ -111,7 +111,7 @@ class DonatePanelService:
     # ==========================================================
 
     def mark_playing(self, event: dict):
-
+        print("PLAYING", event.get("_donate_id"))
         donate_id = event.get("_donate_id")
 
         if not donate_id:
@@ -134,7 +134,7 @@ class DonatePanelService:
     # ==========================================================
 
     def mark_finished(self):
-
+        print("FINISHED")
         donate = donate_panel_state.get_current()
 
         if not donate:
