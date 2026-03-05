@@ -34,7 +34,6 @@ class TTSRuntime:
         self.player_thread = None
 
     def reload_device(self):
-        from modules.client.audio.models import load_config
         cfg = load_config()
         self.device = cfg.get("output_device")
         print("[TTS] device reloaded:", self.device)
@@ -60,7 +59,6 @@ class TTSRuntime:
 
         self.generator_thread.start()
 
-        # ждем первый сегмент
         first_segment = self.segment_queue.get()
 
         if first_segment is None:
@@ -69,7 +67,7 @@ class TTSRuntime:
         return first_segment
 
     # =========================================
-    # PLAY (проигрываем все сегменты)
+    # PLAY
     # =========================================
 
     def play(self, first_segment):
@@ -82,7 +80,6 @@ class TTSRuntime:
 
         self.player_thread.start()
 
-        # блокируем поток пока все доиграет
         self.generator_thread.join()
         self.player_thread.join()
 
@@ -141,7 +138,6 @@ class TTSRuntime:
             except Exception as e:
                 print("[TTS] generation error:", e)
 
-        # сигнал окончания генерации
         self.segment_queue.put(None)
 
     # =========================================
@@ -170,6 +166,38 @@ class TTSRuntime:
             file_path = self.segment_queue.get()
 
     # =========================================
+    # OPEN AUDIO STREAM (WASAPI + fallback)
+    # =========================================
+
+    def _open_stream(self, sr, device_index):
+
+        try:
+            stream = sd.OutputStream(
+                samplerate=sr,
+                channels=2,
+                dtype="float32",
+                device=device_index,
+                extra_settings=sd.WasapiSettings(exclusive=False)
+            )
+            print("[TTS] stream opened with WASAPI")
+            return stream
+
+        except Exception as e:
+
+            print("[TTS] WASAPI failed, fallback:", e)
+
+            stream = sd.OutputStream(
+                samplerate=sr,
+                channels=2,
+                dtype="float32",
+                device=device_index
+            )
+
+            print("[TTS] stream opened without WASAPI")
+
+            return stream
+
+    # =========================================
     # PLAY FILE
     # =========================================
 
@@ -195,13 +223,7 @@ class TTSRuntime:
             except Exception as e:
                 print("[TTS] device resolve error:", e)
 
-        stream = sd.OutputStream(
-            samplerate=sr,
-            channels=2,
-            dtype="float32",
-            device=device_index,
-            extra_settings=sd.WasapiSettings(exclusive=False)
-        )
+        stream = self._open_stream(sr, device_index)
 
         stream.start()
 
