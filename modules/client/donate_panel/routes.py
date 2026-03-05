@@ -1,12 +1,13 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, jsonify
 import requests
-from flask import request
+
 from modules.client.cabinet.service import get_api_key
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
 from modules.client.donate_panel.repository import DonateRepository
+
 from modules.utils.constant import DONATE_URL
+
 from modules.client.tts.tts_runtime import tts_runtime
-from flask import jsonify
 
 bp = Blueprint(
     "client_donate_panel",
@@ -47,7 +48,8 @@ def state():
             "amount": current.amount,
             "message": current.message,
             "reward": current.extra,
-            "status": current.status
+            "status": current.status,
+            "image_url": current.raw_event and __import__("json").loads(current.raw_event).get("image_url")
         } if current else None,
 
         "paused": paused,
@@ -63,11 +65,42 @@ def state():
                 "amount": d.amount,
                 "message": d.message,
                 "reward": d.extra,
-                "status": d.status
+                "status": d.status,
+                "image_url": d.raw_event and __import__("json").loads(d.raw_event).get("image_url")
             }
             for d in history
         ]
 
+    })
+
+
+# ==========================================================
+# START EVENT FROM PANEL
+# ==========================================================
+
+@bp.route("/start/<int:donate_id>", methods=["POST"])
+def start_event(donate_id):
+
+    ok = donate_panel_service.start_event(donate_id)
+
+    return jsonify({
+        "ok": ok
+    })
+
+
+# ==========================================================
+# IMAGE CONTINUE
+# ==========================================================
+
+@bp.route("/image/continue", methods=["POST"])
+def image_continue():
+
+    ws_url = request.json.get("ws_url")
+
+    donate_panel_service.image_continue(ws_url)
+
+    return jsonify({
+        "ok": True
     })
 
 
@@ -93,7 +126,9 @@ def skip():
 
 @bp.route("/pause", methods=["POST"])
 def pause():
+
     paused = donate_panel_service.toggle_pause()
+
     if paused:
         tts_runtime.pause()
     else:
@@ -118,7 +153,9 @@ def repeat(donate_id):
         return jsonify({"ok": False})
 
     try:
+
         api_key = get_api_key()
+
         requests.post(
             DONATE_URL,
             headers={
@@ -142,13 +179,16 @@ def repeat(donate_id):
 
     return jsonify({"ok": True})
 
+
 # ==========================================================
 # SEND TEST DONATE
 # ==========================================================
 
 @bp.route("/send", methods=["POST"])
 def send():
+
     data = request.json or {}
+
     username = data.get("user")
     amount = data.get("amount")
     message = data.get("message")

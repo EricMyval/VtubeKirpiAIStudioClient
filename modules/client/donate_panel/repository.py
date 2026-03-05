@@ -3,7 +3,6 @@ from datetime import datetime
 
 from .db import get_connection
 from .models import Donate
-from .session_stats import donation_session_stats
 
 
 class DonateRepository:
@@ -19,7 +18,9 @@ class DonateRepository:
         amount: int,
         message: str,
         extra: Optional[str] = None,
+        raw_event: Optional[str] = None,
     ) -> int:
+
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -28,8 +29,8 @@ class DonateRepository:
         cursor.execute(
             """
             INSERT INTO donations
-            (platform, username, amount, message, created_at, extra)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (platform, username, amount, message, created_at, extra, raw_event)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 platform,
@@ -38,6 +39,7 @@ class DonateRepository:
                 message,
                 created_at,
                 extra,
+                raw_event,
             ),
         )
 
@@ -166,6 +168,7 @@ class DonateRepository:
             amount=donate.amount,
             message=donate.message,
             extra="repeat",
+            raw_event=donate.raw_event,
         )
 
         return True

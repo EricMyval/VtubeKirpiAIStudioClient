@@ -1,8 +1,23 @@
+import json
+
 from .repository import DonateRepository
 from .donate_panel_state import donate_panel_state
 from .session_stats import donation_session_stats
-from modules.utils.constant import PLATFORM_TYPE_TWITCH_POINTS, PLATFORM_TYPE_TWITCH_VOICE, PLATFORM_TYPE_TWITCH_AI, \
-    PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI
+
+from modules.client.images.image_gate import image_gate
+from modules.client.images.show_image import hide_message_image
+
+from modules.client.runtime.client_queue import clientEventQueue
+
+from modules.utils.constant import (
+    PLATFORM_TYPE_TWITCH_POINTS,
+    PLATFORM_TYPE_TWITCH_VOICE,
+    PLATFORM_TYPE_TWITCH_AI,
+    PLATFORM_TYPE_DONATION_ALERTS,
+    PLATFORM_TYPE_DONATION_ALERTS_AI,
+    PLATFORM_TYPE_DONATTY,
+    PLATFORM_TYPE_DONATTY_AI
+)
 
 
 class DonatePanelService:
@@ -17,7 +32,6 @@ class DonatePanelService:
 
         amount = int(event.get("amount", 0) or 0)
 
-        # twitch points
         if amount <= 0 and platform in {
             PLATFORM_TYPE_TWITCH_POINTS,
             PLATFORM_TYPE_TWITCH_VOICE,
@@ -45,10 +59,10 @@ class DonatePanelService:
             username=username,
             amount=amount,
             message=message,
-            extra=extra
+            extra=extra,
+            raw_event=json.dumps(event)
         )
 
-        # считаем только реальные донаты
         if platform in {
             PLATFORM_TYPE_DONATION_ALERTS,
             PLATFORM_TYPE_DONATION_ALERTS_AI,
@@ -58,29 +72,52 @@ class DonatePanelService:
             donation_session_stats.add(amount)
 
     # ==========================================================
+    # START EVENT FROM PANEL
+    # ==========================================================
+
+    def start_event(self, donate_id: int):
+
+        donate = DonateRepository.get_by_id(donate_id)
+
+        if not donate:
+            return False
+
+        if not donate.raw_event:
+            return False
+
+        import json
+
+        event = json.loads(donate.raw_event)
+
+        # ВАЖНО: передаем ID доната
+        event["_donate_id"] = donate_id
+
+        clientEventQueue.add_event(event)
+
+        return True
+
+    # ==========================================================
+    # IMAGE CONTINUE
+    # ==========================================================
+
+    def image_continue(self, ws_url: str):
+
+        hide_message_image(ws_url)
+
+        image_gate.release()
+
+    # ==========================================================
     # MARK PLAYING
     # ==========================================================
 
     def mark_playing(self, event: dict):
 
-        platform = event.get("platform") or "unknown"
+        donate_id = event.get("_donate_id")
 
-        amount = int(event.get("amount", 0) or 0)
-
-        # twitch points
-        if amount <= 0 and platform in {
-            PLATFORM_TYPE_TWITCH_POINTS,
-            PLATFORM_TYPE_TWITCH_VOICE,
-            PLATFORM_TYPE_TWITCH_AI
-        }:
-            amount = int(event.get("settings", {}).get("points", 0) or 0)
-
-        if amount <= 0:
+        if not donate_id:
             return
 
-        username = event.get("username") or event.get("user") or "unknown"
-
-        donate = DonateRepository.find_last(username, amount)
+        donate = DonateRepository.get_by_id(donate_id)
 
         if not donate:
             return

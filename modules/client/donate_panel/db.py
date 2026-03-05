@@ -11,10 +11,16 @@ def get_connection():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
 
-    # WAL режим — лучше для многопоточности
     conn.execute("PRAGMA journal_mode=WAL")
 
     return conn
+
+
+def _column_exists(cursor, table, column):
+
+    cursor.execute(f"PRAGMA table_info({table})")
+    cols = [row["name"] for row in cursor.fetchall()]
+    return column in cols
 
 
 def init_db():
@@ -36,13 +42,17 @@ def init_db():
 
             extra TEXT,
 
+            raw_event TEXT,
+
             status TEXT NOT NULL DEFAULT 'queued'
-            -- queued | playing | played | skipped
         )
         """
     )
 
-    # индекс ускоряет загрузку панели
+    # миграция старой базы
+    if not _column_exists(cursor, "donations", "raw_event"):
+        cursor.execute("ALTER TABLE donations ADD COLUMN raw_event TEXT")
+
     cursor.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_donations_status

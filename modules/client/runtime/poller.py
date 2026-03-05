@@ -1,10 +1,21 @@
 import requests
 import time
+
 from modules.client.cabinet.service import get_api_key
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
-from modules.utils.constant import POLL_INTERVAL, API_URL, PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI, \
-    PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, PLATFORM_TYPE_TWITCH_VOICE, \
-    PLATFORM_TYPE_TWITCH_AI, PLATFORM_TYPE_TWITCH_POINTS
+
+from modules.utils.constant import (
+    POLL_INTERVAL,
+    API_URL,
+    PLATFORM_TYPE_DONATTY,
+    PLATFORM_TYPE_DONATTY_AI,
+    PLATFORM_TYPE_DONATION_ALERTS,
+    PLATFORM_TYPE_DONATION_ALERTS_AI,
+    PLATFORM_TYPE_TWITCH_VOICE,
+    PLATFORM_TYPE_TWITCH_AI,
+    PLATFORM_TYPE_TWITCH_POINTS
+)
+
 from modules.utils.ws_client import send_ws_command
 
 
@@ -80,6 +91,7 @@ class ClientPoller:
 
                     platform = event.get("platform")
                     message = event.get("message")
+                    image_url = event.get("image_url")
 
                     add_to_panel = False
 
@@ -101,7 +113,17 @@ class ClientPoller:
                     if add_to_panel:
                         donate_panel_service.add_event_from_poller(event)
 
-                    # channel points без текста
+                    # ======================================
+                    # IMAGE EVENTS → только панель
+                    # ======================================
+
+                    if image_url:
+                        continue
+
+                    # ======================================
+                    # TWITCH POINTS БЕЗ ТЕКСТА
+                    # ======================================
+
                     if platform == PLATFORM_TYPE_TWITCH_POINTS:
                         send_ws_command(event.get("reward"), ws_address)
 
@@ -109,7 +131,6 @@ class ClientPoller:
                         self.queue.add_event(event)
 
             except Exception as e:
-
                 print(f"[Poller] error: {e}")
 
             time.sleep(POLL_INTERVAL)

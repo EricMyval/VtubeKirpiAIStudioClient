@@ -19,6 +19,8 @@ class Donate:
 
     status: str = "queued"
 
+    raw_event: Optional[str] = None
+
     # ======================================
     # FROM DB ROW
     # ======================================
@@ -38,6 +40,7 @@ class Donate:
             created_at=row["created_at"],
             extra=row["extra"],
             status=row["status"],
+            raw_event=row["raw_event"] if "raw_event" in row.keys() else None,
         )
 
     # ======================================
