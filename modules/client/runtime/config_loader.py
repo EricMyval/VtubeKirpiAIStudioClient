@@ -1,6 +1,6 @@
 import requests
 from modules.client.cabinet.service import get_api_key
-from modules.client.runtime.constant import WIDGETS_URL
+from modules.utils.constant import WIDGETS_URL
 
 
 class ClientConfigLoader:

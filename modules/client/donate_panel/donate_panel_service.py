@@ -1,7 +1,7 @@
 from .repository import DonateRepository
 from .donate_panel_state import donate_panel_state
 from .session_stats import donation_session_stats
-from ..runtime.constant import PLATFORM_TYPE_TWITCH_POINTS, PLATFORM_TYPE_TWITCH_VOICE, PLATFORM_TYPE_TWITCH_AI, \
+from modules.utils.constant import PLATFORM_TYPE_TWITCH_POINTS, PLATFORM_TYPE_TWITCH_VOICE, PLATFORM_TYPE_TWITCH_AI, \
     PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI
 
 

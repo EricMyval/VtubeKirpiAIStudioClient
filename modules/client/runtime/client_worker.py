@@ -1,11 +1,10 @@
 import threading
 import time
-from modules.client.afk.afk_state import afk_state
 from modules.client.pets.pet_runtime import handle_pet
 from modules.client.roulette.runtime import roulette_runtime
 from modules.client.runtime.client_queue import clientEventQueue
-from modules.client.runtime.constant import PLATFORM_TYPE_AFK_START, PLATFORM_TYPE_AFK_STOP, PLATFORM_TYPE_TWITCH_POINTS
-from modules.client.runtime.ws_client import send_ws_command
+from modules.utils.constant import PLATFORM_TYPE_TWITCH_POINTS, PLATFORM_TYPE_AFK_START
+from modules.utils.ws_client import send_ws_command
 from modules.client.timer.timer_service import TimerService
 from modules.client.tts.tts_runtime import tts_runtime
 from modules.donation_image.donation_image import show_message_image
@@ -68,20 +67,24 @@ class ClientWorker:
         donate_panel_service.mark_playing(event)
 
         # ======================================
-        # AFK
+        # TTS FIRST SEGMENT
         # ======================================
 
-        if platform and platform in {
-            PLATFORM_TYPE_AFK_START,
-            PLATFORM_TYPE_AFK_STOP
+        first_segment = None
+        tts_enabled = False
+        if platform and platform not in {
+            PLATFORM_TYPE_TWITCH_POINTS
         }:
-            self._execute_ws_command_list([
-                {
-                    "command": event.get("reward"),
-                    "delay": 0,
-                    "afk_only": False
-                }
-            ], True)
+            text = event.get("formatted_text")
+            voice_file_path = event.get("voice_file_path")
+            voice_reference_text = event.get("voice_reference_text")
+            if text and voice_file_path and voice_reference_text:
+                tts_enabled = True
+                first_segment = tts_runtime.prepare(
+                    text,
+                    voice_file_path,
+                    voice_reference_text
+                )
 
         # ======================================
         # ALERT
@@ -132,27 +135,14 @@ class ClientWorker:
         # TTS
         # ======================================
 
-        if platform and platform not in {
-            PLATFORM_TYPE_TWITCH_POINTS
-        }:
-            text = event.get("formatted_text")
-            voice_file_path = event.get("voice_file_path")
-            voice_reference_text = event.get("voice_reference_text")
-            if text and voice_file_path and voice_reference_text:
-                try:
-                    tts_runtime.speak(
-                        text,
-                        voice_file_path,
-                        voice_reference_text
-                    )
-                except Exception as e:
-                    print(f"[TTS] error: {e}")
+        if tts_enabled and first_segment:
+            tts_runtime.play(first_segment)
 
         # ======================================
         # WS COMMANDS
         # ======================================
 
-        self._execute_ws_command_list(event.get("ws_commands", []), True)
+        self._execute_ws_command_list(event.get("ws_commands", []))
 
         # ======================================
         # END WS COMMANDS
@@ -168,36 +158,20 @@ class ClientWorker:
 
     # ======================================
 
-    def _execute_ws_command_list(self, commands: list[dict], afk_ignore: bool = False):
-
+    def _execute_ws_command_list(self, commands: list[dict]):
         if not commands:
             return
-
         if not self.ws_address:
             print("[WS] ws_address not set")
             return
-
-        afk_on = afk_state.is_enabled()
-
         for cmd in commands:
-
-            afk_only = cmd.get("afk_only", False)
-
-            if not afk_ignore:
-                if afk_only and not afk_on:
-                    continue
-
             command_text = cmd.get("command")
             delay = cmd.get("delay", 0)
-
             if command_text:
-
                 try:
                     send_ws_command(command_text, self.ws_address)
-
                 except Exception as e:
                     print(f"[WS] send error: {e}")
-
             if delay and delay > 0:
                 time.sleep(delay)
 

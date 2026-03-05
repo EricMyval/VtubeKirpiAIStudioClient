@@ -2,7 +2,7 @@ import threading
 import time
 
 from modules.client.timer.timer_service import TimerService
-from modules.client.runtime.ws_client import send_ws_command
+from modules.utils.ws_client import send_ws_command
 
 from .pet_state import pet_state
 

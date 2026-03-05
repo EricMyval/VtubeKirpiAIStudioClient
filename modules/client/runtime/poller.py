@@ -2,10 +2,10 @@ import requests
 import time
 from modules.client.cabinet.service import get_api_key
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
-from modules.client.runtime.constant import POLL_INTERVAL, API_URL, PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI, \
+from modules.utils.constant import POLL_INTERVAL, API_URL, PLATFORM_TYPE_DONATTY, PLATFORM_TYPE_DONATTY_AI, \
     PLATFORM_TYPE_DONATION_ALERTS, PLATFORM_TYPE_DONATION_ALERTS_AI, PLATFORM_TYPE_TWITCH_VOICE, \
     PLATFORM_TYPE_TWITCH_AI, PLATFORM_TYPE_TWITCH_POINTS
-from modules.client.runtime.ws_client import send_ws_command
+from modules.utils.ws_client import send_ws_command
 
 
 class ClientPoller:

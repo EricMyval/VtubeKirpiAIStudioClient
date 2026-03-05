@@ -28,10 +28,10 @@ class TTSRuntime:
         self.player_thread = None
 
     # =========================================
-    # PUBLIC
+    # PREPARE (генерируем первый сегмент)
     # =========================================
 
-    def speak(self, text, voice_file_path, voice_reference_text):
+    def prepare(self, text, voice_file_path, voice_reference_text):
 
         self.stop()
 
@@ -46,12 +46,28 @@ class TTSRuntime:
             daemon=True
         )
 
+        self.generator_thread.start()
+
+        # ждем первый сегмент
+        first_segment = self.segment_queue.get()
+
+        if first_segment is None:
+            return None
+
+        return first_segment
+
+    # =========================================
+    # PLAY (проигрываем все сегменты)
+    # =========================================
+
+    def play(self, first_segment):
+
         self.player_thread = threading.Thread(
             target=self._player_loop,
+            args=(first_segment,),
             daemon=True
         )
 
-        self.generator_thread.start()
         self.player_thread.start()
 
         # блокируем поток пока все доиграет
@@ -69,7 +85,7 @@ class TTSRuntime:
         self.pause_event.set()
 
     def stop(self):
-        print("[TTS] stop")
+
         self.stop_event.set()
 
         try:
@@ -113,21 +129,21 @@ class TTSRuntime:
             except Exception as e:
                 print("[TTS] generation error:", e)
 
-        # сигнал что генерация закончилась
+        # сигнал окончания генерации
         self.segment_queue.put(None)
 
     # =========================================
     # PLAYER
     # =========================================
 
-    def _player_loop(self):
+    def _player_loop(self, first_segment):
+
+        file_path = first_segment
 
         while True:
 
             if self.stop_event.is_set():
                 return
-
-            file_path = self.segment_queue.get()
 
             if file_path is None:
                 return
@@ -138,6 +154,8 @@ class TTSRuntime:
                 Path(file_path).unlink(missing_ok=True)
             except:
                 pass
+
+            file_path = self.segment_queue.get()
 
     # =========================================
     # PLAY FILE

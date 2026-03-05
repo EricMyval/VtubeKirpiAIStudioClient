@@ -4,7 +4,7 @@ from flask import request
 from modules.client.cabinet.service import get_api_key
 from modules.client.donate_panel.donate_panel_service import donate_panel_service
 from modules.client.donate_panel.repository import DonateRepository
-from modules.client.runtime.constant import DONATE_URL
+from modules.utils.constant import DONATE_URL
 from modules.client.tts.tts_runtime import tts_runtime
 from flask import jsonify
 

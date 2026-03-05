@@ -1,7 +1,7 @@
 import asyncio
 import threading
 
-from modules.client.runtime.ws_client import send_ws_command_async
+from modules.utils.ws_client import send_ws_command_async
 from .timer_state import timer_state
 
 
