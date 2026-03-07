@@ -36,7 +36,7 @@ def page():
 def state():
 
     current = donate_panel_service.get_current()
-    history = donate_panel_service.get_history(30)
+    history = donate_panel_service.get_history(150)
     paused = donate_panel_service.is_paused()
 
     return jsonify({
@@ -66,6 +66,7 @@ def state():
                 "message": d.message,
                 "reward": d.extra,
                 "status": d.status,
+                "created_at": d.created_at,
                 "image_url": d.raw_event and __import__("json").loads(d.raw_event).get("image_url")
             }
             for d in history

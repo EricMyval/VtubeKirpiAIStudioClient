@@ -53,7 +53,7 @@ class ClientPoller:
                 response = requests.post(
                     API_URL,
                     headers={"X-API-KEY": api_key},
-                    timeout=10
+                    timeout=60
                 )
 
                 if response.status_code == 401:
