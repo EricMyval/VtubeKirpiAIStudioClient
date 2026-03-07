@@ -1,11 +1,11 @@
 # main.py
 import sys
 import threading
-from modules.client.runtime.client_queue import clientEventQueue
-from modules.client.runtime.client_worker import clientWorker
-from modules.client.runtime.poller import ClientPoller
-from modules.client.tts.config import bootstrap_tts
-from modules.client.tts.service import load_tts
+from modules.runtime.client_queue import clientEventQueue
+from modules.runtime.client_worker import clientWorker
+from modules.runtime.poller import ClientPoller
+from modules.tts.config import bootstrap_tts
+from modules.tts.service import load_tts
 from modules.web_admin.web_admin import start_web_admin
 
 if __name__ == "__main__":

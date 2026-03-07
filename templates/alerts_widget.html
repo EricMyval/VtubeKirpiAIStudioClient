@@ -250,16 +250,22 @@ function showAlert(data){
 
     if(videoEl){
 
+        const duration = data.duration || 6000;
+
         videoEl.addEventListener("ended", clearAlert, { once:true });
 
         videoEl.addEventListener("error", ()=>{
-            clearTimer = setTimeout(clearAlert, 8000);
+            clearTimer = setTimeout(clearAlert, duration);
         }, { once:true });
+
+        // fallback если видео зависло
+        clearTimer = setTimeout(clearAlert, duration);
 
         return;
     }
 
-    clearTimer = setTimeout(clearAlert, 8000);
+    const duration = data.duration || 8000;
+    clearTimer = setTimeout(clearAlert, duration);
 }
 
 /* ------------------------------------------------ */

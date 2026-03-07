@@ -2,13 +2,13 @@ from flask import Flask
 from modules.utils.runtime_paths import app_root
 import logging
 
-from modules.client.alerts.routes import bp as alerts_bp
-from modules.client.roulette.overlay_routes import bp as roulette_overlay_bp
-from modules.client.cabinet.routes import bp as client_cabinet_bp
-from modules.client.audio.routes import bp as client_audio_bp
-from modules.client.donate_panel.routes import bp as donate_panel_bp
-from modules.client.timer.timer_routes import bp as timer_bp
-from modules.client.afk.afk_routes import bp as afk_bp
+from modules.alerts.routes import bp as alerts_bp
+from modules.roulette.overlay_routes import bp as roulette_overlay_bp
+from modules.cabinet.routes import bp as client_cabinet_bp
+from modules.audio.routes import bp as client_audio_bp
+from modules.donate_panel.routes import bp as donate_panel_bp
+from modules.timer.timer_routes import bp as timer_bp
+from modules.afk.afk_routes import bp as afk_bp
 
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
