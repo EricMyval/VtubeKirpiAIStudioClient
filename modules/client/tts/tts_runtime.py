@@ -12,6 +12,8 @@ from modules.client.audio.models import load_config
 from modules.client.tts.service import tts_create_file
 from modules.client.tts.tts_segmenter import split_text
 
+from modules.client.runtime.playback_state import playback_state
+
 
 class TTSRuntime:
 
@@ -24,14 +26,15 @@ class TTSRuntime:
         self.device = device
 
         self.segment_queue = queue.Queue()
-
-        self.pause_event = threading.Event()
         self.stop_event = threading.Event()
-
-        self.pause_event.set()
 
         self.generator_thread = None
         self.player_thread = None
+
+        # текущий stream чтобы можно было мгновенно остановить
+        self.current_stream = None
+
+    # =========================================
 
     def reload_device(self):
         cfg = load_config()
@@ -39,16 +42,14 @@ class TTSRuntime:
         print("[TTS] device reloaded:", self.device)
 
     # =========================================
-    # PREPARE (генерируем первый сегмент)
+    # PREPARE
     # =========================================
 
     def prepare(self, text, voice_file_path, voice_reference_text):
 
         self.stop()
 
-        self.pause_event.set()
         self.stop_event.clear()
-
         self.segment_queue = queue.Queue()
 
         self.generator_thread = threading.Thread(
@@ -56,12 +57,11 @@ class TTSRuntime:
             args=(text, voice_file_path, voice_reference_text),
             daemon=True
         )
-
         self.generator_thread.start()
 
-        first_segment = self.segment_queue.get()
-
-        if first_segment is None:
+        try:
+            first_segment = self.segment_queue.get(timeout=10)
+        except queue.Empty:
             return None
 
         return first_segment
@@ -77,30 +77,49 @@ class TTSRuntime:
             args=(first_segment,),
             daemon=True
         )
-
         self.player_thread.start()
 
-        self.generator_thread.join()
-        self.player_thread.join()
+        while True:
+
+            if self.stop_event.is_set() or playback_state.is_skip():
+                break
+
+            if not self.player_thread.is_alive():
+                break
+
+            time.sleep(0.05)
 
     # =========================================
-
-    def pause(self):
-        print("[TTS] pause")
-        self.pause_event.clear()
-
-    def resume(self):
-        print("[TTS] resume")
-        self.pause_event.set()
+    # STOP
+    # =========================================
 
     def stop(self):
 
         self.stop_event.set()
 
+        # мгновенно останавливаем stream
+        if self.current_stream:
+            try:
+                self.current_stream.abort()
+            except:
+                pass
+
+        # очищаем очередь сегментов
         try:
             while True:
-                self.segment_queue.get_nowait()
+                file = self.segment_queue.get_nowait()
+                if file:
+                    try:
+                        Path(file).unlink(missing_ok=True)
+                    except:
+                        pass
         except queue.Empty:
+            pass
+
+        # будим player_loop
+        try:
+            self.segment_queue.put_nowait(None)
+        except:
             pass
 
     # =========================================
@@ -113,7 +132,7 @@ class TTSRuntime:
 
         for i, segment in enumerate(segments):
 
-            if self.stop_event.is_set():
+            if self.stop_event.is_set() or playback_state.is_skip():
                 return
 
             start = time.perf_counter()
@@ -133,6 +152,13 @@ class TTSRuntime:
                     f"{len(segment)} chars → {elapsed:.2f}s"
                 )
 
+                if self.stop_event.is_set() or playback_state.is_skip():
+                    try:
+                        Path(file_path).unlink(missing_ok=True)
+                    except:
+                        pass
+                    return
+
                 self.segment_queue.put(file_path)
 
             except Exception as e:
@@ -150,10 +176,14 @@ class TTSRuntime:
 
         while True:
 
-            if self.stop_event.is_set():
+            if self.stop_event.is_set() or playback_state.is_skip():
                 return
 
             if file_path is None:
+                return
+
+            # если skip — не открываем файл
+            if playback_state.is_skip():
                 return
 
             self._play_file(file_path)
@@ -163,39 +193,10 @@ class TTSRuntime:
             except:
                 pass
 
-            file_path = self.segment_queue.get()
-
-    # =========================================
-    # OPEN AUDIO STREAM (WASAPI + fallback)
-    # =========================================
-
-    def _open_stream(self, sr, device_index):
-
-        try:
-            stream = sd.OutputStream(
-                samplerate=sr,
-                channels=2,
-                dtype="float32",
-                device=device_index,
-                extra_settings=sd.WasapiSettings(exclusive=False)
-            )
-            print("[TTS] stream opened with WASAPI")
-            return stream
-
-        except Exception as e:
-
-            print("[TTS] WASAPI failed, fallback:", e)
-
-            stream = sd.OutputStream(
-                samplerate=sr,
-                channels=2,
-                dtype="float32",
-                device=device_index
-            )
-
-            print("[TTS] stream opened without WASAPI")
-
-            return stream
+            try:
+                file_path = self.segment_queue.get(timeout=0.5)
+            except queue.Empty:
+                continue
 
     # =========================================
     # PLAY FILE
@@ -203,15 +204,22 @@ class TTSRuntime:
 
     def _play_file(self, wav_path):
 
-        print("[TTS PLAYER] play:", wav_path)
+        if self.stop_event.is_set() or playback_state.is_skip():
+            return
 
-        data, sr = sf.read(str(wav_path), dtype="float32")
+        try:
+            data, sr = sf.read(str(wav_path), dtype="float32")
+        except Exception:
+            return
+
+        print("[TTS PLAYER] play:", wav_path)
 
         if data.ndim == 1:
             data = np.stack([data, data], axis=1)
 
         total_frames = len(data)
         position = 0
+        finished = False
 
         device_index = None
 
@@ -223,12 +231,13 @@ class TTSRuntime:
                 print("[TTS] device resolve error:", e)
 
         def callback(outdata, frames, time_info, status):
-            nonlocal position
+            nonlocal position, finished
 
-            if self.stop_event.is_set():
+            if self.stop_event.is_set() or playback_state.is_skip():
+                finished = True
                 raise sd.CallbackStop()
 
-            if not self.pause_event.is_set():
+            if not playback_state.pause_event.is_set():
                 outdata.fill(0)
                 return
 
@@ -238,28 +247,37 @@ class TTSRuntime:
             if len(chunk) < frames:
                 outdata[:len(chunk)] = chunk
                 outdata[len(chunk):].fill(0)
+                finished = True
                 raise sd.CallbackStop()
-            else:
-                outdata[:] = chunk
 
+            outdata[:] = chunk
             position = end
 
         try:
 
             with sd.OutputStream(
-                    samplerate=sr,
-                    channels=2,
-                    dtype="float32",
-                    device=device_index,
-                    callback=callback,
-                    blocksize=2048
-            ):
+                samplerate=sr,
+                channels=2,
+                dtype="float32",
+                device=device_index,
+                callback=callback,
+                blocksize=2048
+            ) as stream:
 
-                duration_ms = int((total_frames / sr) * 1000) + 100
-                sd.sleep(duration_ms)
+                self.current_stream = stream
+
+                while not finished:
+
+                    if self.stop_event.is_set() or playback_state.is_skip():
+                        break
+
+                    time.sleep(0.02)
 
         except Exception as e:
             print("[TTS] playback error:", e)
+
+        finally:
+            self.current_stream = None
 
 
 tts_runtime = TTSRuntime()

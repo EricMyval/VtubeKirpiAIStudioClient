@@ -8,6 +8,8 @@ from modules.client.donate_panel.repository import DonateRepository
 from modules.utils.constant import DONATE_URL
 
 from modules.client.tts.tts_runtime import tts_runtime
+from modules.client.runtime.playback_state import playback_state
+
 
 bp = Blueprint(
     "client_donate_panel",
@@ -114,6 +116,7 @@ def skip():
 
     donate_panel_service.skip()
 
+    playback_state.skip()
     tts_runtime.stop()
 
     return jsonify({
@@ -131,9 +134,9 @@ def pause():
     paused = donate_panel_service.toggle_pause()
 
     if paused:
-        tts_runtime.pause()
+        playback_state.pause()
     else:
-        tts_runtime.resume()
+        playback_state.resume()
 
     return jsonify({
         "ok": True,
