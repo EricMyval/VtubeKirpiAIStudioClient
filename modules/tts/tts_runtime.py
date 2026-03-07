@@ -60,7 +60,7 @@ class TTSRuntime:
         self.generator_thread.start()
 
         try:
-            first_segment = self.segment_queue.get(timeout=10)
+            first_segment = self.segment_queue.get(timeout=60)
         except queue.Empty:
             return None
 
@@ -118,7 +118,7 @@ class TTSRuntime:
 
         # будим player_loop
         try:
-            self.segment_queue.put_nowait(None)
+            self.segment_queue.put(None, timeout=0.1)
         except:
             pass
 
@@ -129,6 +129,9 @@ class TTSRuntime:
     def _generator_loop(self, text, voice_file_path, voice_reference_text):
 
         segments = split_text(text)
+
+        if not segments:
+            segments = [text]
 
         for i, segment in enumerate(segments):
 
@@ -148,23 +151,32 @@ class TTSRuntime:
                 elapsed = time.perf_counter() - start
 
                 print(
-                    f"[TTS] segment {i+1}/{len(segments)} "
+                    f"[TTS] segment {i + 1}/{len(segments)} "
                     f"{len(segment)} chars → {elapsed:.2f}s"
                 )
+
+                # если генерация провалилась — пропускаем сегмент
+                if not file_path:
+                    print("[TTS] segment skipped (generation failed)")
+                    continue
 
                 if self.stop_event.is_set() or playback_state.is_skip():
                     try:
                         Path(file_path).unlink(missing_ok=True)
-                    except:
+                    except Exception:
                         pass
                     return
 
-                self.segment_queue.put(file_path)
+                try:
+                    self.segment_queue.put(file_path, timeout=0.1)
+                except queue.Full:
+                    return
 
             except Exception as e:
                 print("[TTS] generation error:", e)
 
-        self.segment_queue.put(None)
+        if not self.stop_event.is_set():
+            self.segment_queue.put(None)
 
     # =========================================
     # PLAYER
@@ -194,7 +206,7 @@ class TTSRuntime:
                 pass
 
             try:
-                file_path = self.segment_queue.get(timeout=0.5)
+                file_path = self.segment_queue.get()
             except queue.Empty:
                 continue
 
@@ -207,9 +219,14 @@ class TTSRuntime:
         if self.stop_event.is_set() or playback_state.is_skip():
             return
 
-        try:
-            data, sr = sf.read(str(wav_path), dtype="float32")
-        except Exception:
+        for _ in range(3):
+            try:
+                data, sr = sf.read(str(wav_path), dtype="float32")
+                break
+            except Exception:
+                time.sleep(0.05)
+        else:
+            print("[TTS] read error:", wav_path)
             return
 
         print("[TTS PLAYER] play:", wav_path)

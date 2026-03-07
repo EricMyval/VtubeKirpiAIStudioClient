@@ -26,20 +26,23 @@ _number_file = 0
 # TEXT NORMALIZATION
 # ==========================================================
 
-def _normalize_text(text: str) -> str:
+def _normalize_text(text: str):
 
     text = text.strip()
 
-    # убираем мусорные пробелы
     text = re.sub(r"\s+", " ", text)
 
-    # если текст очень короткий — F5 может ломаться
-    if len(text) < 6:
+    # пробел после :
+    text = text.replace(":", ": ")
+
+    # если короткая фраза
+    if len(text) < 10:
         text += "..."
 
-    # если последнее слово короткое — добавляем хвост
     words = text.split()
-    if words and len(words[-1]) <= 2:
+
+    # короткое последнее слово
+    if words and len(words[-1]) <= 4:
         text += "..."
 
     return text
