@@ -10,4 +10,3 @@ KirpiLauncher.spec
 build/
 dist/
 KirpiAIStudio.spec
-launcher.py

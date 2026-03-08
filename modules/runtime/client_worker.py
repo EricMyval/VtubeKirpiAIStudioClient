@@ -1,21 +1,13 @@
 import threading
 import time
-
-from modules.pets.pet_runtime import handle_pet
 from modules.runtime.client_queue import clientEventQueue
 from modules.runtime.playback_state import playback_state
-
 from modules.utils.constant import PLATFORM_TYPE_TWITCH_POINTS
 from modules.utils.ws_client import send_ws_command
-
-from modules.timer.timer_service import TimerService
 from modules.tts.tts_runtime import tts_runtime
-
 from modules.alerts.alert_service import alert_service
 from modules.alerts.alert_queue import push_alert
-
 from modules.donate_panel.donate_panel_service import donate_panel_service
-
 from modules.images.show_image import show_message_image
 from modules.images.image_gate import image_gate
 
@@ -136,19 +128,6 @@ class ClientWorker:
                 event["image_url"],
                 self.ws_address
             )
-
-        # ======================================
-        # PET
-        # ======================================
-
-        handle_pet(event, self.ws_address)
-
-        # ======================================
-        # TIMER DONATE
-        # ======================================
-
-        if is_donate:
-            TimerService.add_donate(amount)
 
         # ======================================
         # TTS

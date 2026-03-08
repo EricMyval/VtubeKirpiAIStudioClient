@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from .service import get_api_key, set_api_key
-from modules.timer.timer_bootstrap import bootstrap_timer
 from modules.tts.config import bootstrap_tts
 
 bp = Blueprint(
@@ -17,7 +16,6 @@ def cabinet():
         api_key = request.form.get("api_key", "")
         set_api_key(api_key)
 
-        bootstrap_timer()
         bootstrap_tts()
 
         flash("API ключ сохранён", "success")
