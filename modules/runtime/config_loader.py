@@ -37,15 +37,3 @@ class ClientConfigLoader:
     @staticmethod
     def load_tts_config() -> dict:
         return ClientConfigLoader._get("tts")
-
-    # ---------------- ROULETTE ----------------
-
-    @staticmethod
-    def load_roulette_config() -> dict:
-        return ClientConfigLoader._get("roulette")
-
-    # ---------------- TIMER ----------------
-
-    @staticmethod
-    def load_timer_config() -> dict:
-        return ClientConfigLoader._get("timer")
