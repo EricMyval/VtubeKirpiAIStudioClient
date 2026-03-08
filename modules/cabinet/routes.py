@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from .service import get_api_key, set_api_key
-from modules.roulette.runtime import roulette_runtime
 from modules.timer.timer_bootstrap import bootstrap_timer
 from modules.tts.config import bootstrap_tts
 
@@ -20,7 +19,6 @@ def cabinet():
 
         bootstrap_timer()
         bootstrap_tts()
-        roulette_runtime.reload_config()
 
         flash("API ключ сохранён", "success")
         return redirect(url_for("client_cabinet.cabinet"))

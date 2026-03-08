@@ -2,7 +2,6 @@ import threading
 import time
 
 from modules.pets.pet_runtime import handle_pet
-from modules.roulette.runtime import roulette_runtime
 from modules.runtime.client_queue import clientEventQueue
 from modules.runtime.playback_state import playback_state
 
@@ -137,13 +136,6 @@ class ClientWorker:
                 event["image_url"],
                 self.ws_address
             )
-
-        # ======================================
-        # ROULETTE
-        # ======================================
-
-        if is_donate:
-            roulette_runtime.add_amount(amount)
 
         # ======================================
         # PET
