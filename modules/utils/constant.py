@@ -1,7 +1,8 @@
 API_URL = "https://kirpi-gpt.ru/api/client/poll"
-DONATE_URL = "https://kirpi-gpt.ru/api/client/donate_repeat"
+API_BASE = "https://kirpi-gpt.ru"
 WIDGETS_URL = "https://kirpi-gpt.ru/api/client/widgets"
-POLL_INTERVAL = 2.0
+LAST_EVENT_URL = f"{API_URL.rsplit('/',1)[0]}/last-event-id"
+POLL_INTERVAL = 1.0
 
 PLATFORM_TYPE_TWITCH_POINTS = "twitch_points"
 PLATFORM_TYPE_TWITCH_RAID = "twitch_raid"
