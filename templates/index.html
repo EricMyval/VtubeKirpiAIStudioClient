@@ -1,159 +1,193 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ru">
 
-{% block title %}Виджеты клиента{% endblock %}
-{% block page_title %}🧩 Виджеты клиента{% endblock %}
-{% block page_subtitle %}Оверлеи для OBS и браузера{% endblock %}
+<head>
 
-{% block content %}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<div class="tw-page">
+<title>Kirpi Client</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='css/client-ui.css') }}">
+
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="header">
+<div class="title">🖥️ Kirpi Client</div>
+<div class="subtitle">Настройки клиента</div>
+</div>
 
 
-<!-- =========================
-   HERO
-========================= -->
+<!-- ================= API ================= -->
 
-<div class="tw-card tw-card-hero">
-  <div class="tw-card-body">
+<div class="card hero">
 
-    <div class="tw-hero-header">
-      <div class="tw-hero-icon">🧩</div>
-      <div>
-        <div class="tw-hero-title">Каталог виджетов</div>
-        <div class="tw-hero-sub">
-          Скопируйте ссылку и добавьте её в OBS как Browser Source
-        </div>
-      </div>
-    </div>
+<div class="hero-header">
+<div class="hero-icon">🔑</div>
 
-  </div>
+<div>
+<div class="hero-title">API ключ клиента</div>
+<div class="hero-sub">
+Введите ключ, полученный на сервере
+</div>
+</div>
+</div>
+
+<form method="POST" action="/save-api" class="form">
+
+<label>API ключ</label>
+
+<input
+type="text"
+name="api_key"
+value="{{ api_key }}"
+placeholder="Введите API ключ">
+
+<div class="actions">
+<button class="btn primary">
+💾 Сохранить
+</button>
+</div>
+
+</form>
+
 </div>
 
 
 
-<!-- ======================================================
-   ДОНАТЫ
-====================================================== -->
+<!-- ================= AUDIO ================= -->
 
-<div class="tw-card">
-  <div class="tw-card-body">
+<div class="card">
 
-    <div class="tw-hero-header">
-      <div class="tw-hero-icon">🎁</div>
-      <div>
-        <div class="tw-hero-title">Донаты</div>
-        <div class="tw-hero-sub">
-          Панель управления донатами и событиями
-        </div>
-      </div>
-    </div>
+<div class="hero-header">
 
-    <div class="tw-widget-grid">
+<div class="hero-icon">🎧</div>
 
-      <div class="tw-card tw-widget-card">
-        <div class="tw-card-body">
-
-          <div class="tw-widget-header">
-            <div class="tw-widget-icon">🎁</div>
-            <div>
-              <div class="tw-widget-title">Админ панель донатов</div>
-              <div class="tw-widget-desc">
-                Отображение донатов, озвучка сообщений, изображения, управление AFK режимом
-              </div>
-            </div>
-          </div>
-
-          <div class="tw-widget-url"
-               data-url="{{ BASE_URL }}/client/donate-panel/">
-            {{ BASE_URL }}/client/donate-panel/
-          </div>
-
-          <div class="tw-widget-actions">
-            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
-            <a href="{{ BASE_URL }}/client/donate-panel/" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-
-  </div>
+<div>
+<div class="hero-title">Устройство вывода</div>
+<div class="hero-sub">
+Выберите устройство воспроизведения
 </div>
-
-
-<!-- ======================================================
-   ALERTS
-====================================================== -->
-
-<div class="tw-card">
-  <div class="tw-card-body">
-
-    <div class="tw-hero-header">
-      <div class="tw-hero-icon">🔔</div>
-      <div>
-        <div class="tw-hero-title">Оповещения</div>
-        <div class="tw-hero-sub">
-          Алерты донатов и событий
-        </div>
-      </div>
-    </div>
-
-    <div class="tw-widget-grid">
-
-      <div class="tw-card tw-widget-card">
-        <div class="tw-card-body">
-
-          <div class="tw-widget-header">
-            <div class="tw-widget-icon">🔔</div>
-            <div>
-              <div class="tw-widget-title">Alerts Widget</div>
-              <div class="tw-widget-desc">
-                Донаты, изображения, видео, звук и текст
-              </div>
-            </div>
-          </div>
-
-          <div class="tw-widget-url"
-               data-url="{{ BASE_URL }}/alerts/widget">
-            {{ BASE_URL }}/alerts/widget
-          </div>
-
-          <div class="tw-widget-actions">
-            <button class="tw-btn" onclick="copyWidget(this)">📋 Copy</button>
-            <a href="{{ BASE_URL }}/alerts/widget" target="_blank" class="tw-btn tw-btn-primary">🔗 Open</a>
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-
-  </div>
 </div>
-
 
 </div>
 
+<form method="POST" action="/save-audio" class="form">
+
+<label>Доступные устройства</label>
+
+<select name="output_device">
+
+<option value="">-- Выберите устройство --</option>
+
+{% for d in output_devices %}
+<option value="{{ d.name }}"
+{% if d.name == current_device %}selected{% endif %}>
+{{ d.name }}
+</option>
+{% endfor %}
+
+</select>
+
+<div class="actions">
+<button class="btn primary">
+💾 Сохранить
+</button>
+</div>
+
+</form>
+
+</div>
+
+
+
+<!-- ================= WIDGETS ================= -->
+
+<div class="card">
+
+<div class="hero-header">
+
+<div class="hero-icon">🧩</div>
+
+<div>
+<div class="hero-title">Виджеты OBS</div>
+<div class="hero-sub">
+Добавьте ссылку в OBS Browser Source
+</div>
+</div>
+
+</div>
+
+
+<div class="widget">
+
+<div class="widget-head">
+
+<div class="widget-icon">🔔</div>
+
+<div>
+<div class="widget-title">Alerts Widget</div>
+<div class="widget-desc">
+Донаты, изображения, звук и видео
+</div>
+</div>
+
+</div>
+
+<div class="widget-url"
+data-url="{{ BASE_URL }}/alerts/widget">
+
+{{ BASE_URL }}/alerts/widget
+
+</div>
+
+<div class="widget-actions">
+
+<button class="btn"
+onclick="copyWidget(this)">
+📋 Copy
+</button>
+
+<a href="{{ BASE_URL }}/alerts/widget"
+target="_blank"
+class="btn primary">
+🔗 Open
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 
 <script>
 
 function copyWidget(btn){
 
-  const card = btn.closest(".tw-widget-card")
-  const url = card.querySelector(".tw-widget-url").dataset.url
+const card = btn.closest(".widget")
 
-  navigator.clipboard.writeText(url)
+const url =
+card.querySelector(".widget-url").dataset.url
 
-  btn.innerText = "✅ Copied"
+navigator.clipboard.writeText(url)
 
-  setTimeout(()=>{
-    btn.innerText = "📋 Copy"
-  },1500)
+btn.innerText="✅ Copied"
+
+setTimeout(()=>{
+btn.innerText="📋 Copy"
+},1500)
+
 }
 
 </script>
 
-
-{% endblock %}
+</body>
+</html>

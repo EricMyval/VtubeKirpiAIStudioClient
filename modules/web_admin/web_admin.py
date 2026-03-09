@@ -1,16 +1,8 @@
 import threading
 import webbrowser
 import time
-from flask import render_template
-
 from modules.web_admin import app
 from modules.web_admin.config import get_host, get_port, get_base_url
-
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
 
 # ==========================================
 # BASE_URL для всех HTML
