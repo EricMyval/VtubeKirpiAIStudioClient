@@ -1,7 +1,10 @@
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, asdict
 from typing import Optional, Dict, Any
+from pathlib import Path
 
-from modules.runtime.config_loader import ClientConfigLoader
+
+CONFIG_PATH = Path("data/db/tts_config.json")
 
 
 @dataclass
@@ -31,12 +34,59 @@ class TTSRuntimeConfig:
         }
 
 
+# =========================
+# DEFAULT CONFIG (со скрина)
+# =========================
+
+DEFAULT_CONFIG = TTSRuntimeConfig(
+    max_chunk_size=180,
+    mel_spec_type="vocos",
+    target_rms=0.15,
+    cross_fade_duration=0.2,
+    nfe_step=40,
+    cfg_strength=2.5,
+    sway_sampling_coef=-1,
+    speed=1.0,
+    fix_duration=None,
+    enable_accent=True
+)
+
+
 _runtime_config: TTSRuntimeConfig | None = None
 
 
-def init_tts_config(data: dict):
+# =========================
+# FILE IO
+# =========================
+
+def load_or_create_config() -> TTSRuntimeConfig:
+
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    if not CONFIG_PATH.exists():
+
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(asdict(DEFAULT_CONFIG), f, indent=2)
+
+        print("[TTS] Default config created")
+
+        return DEFAULT_CONFIG
+
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    print("[TTS] Config loaded")
+
+    return TTSRuntimeConfig(**data)
+
+
+# =========================
+# INIT
+# =========================
+
+def init_tts_config(config: TTSRuntimeConfig):
     global _runtime_config
-    _runtime_config = TTSRuntimeConfig(**data)
+    _runtime_config = config
 
 
 def get_tts_config() -> TTSRuntimeConfig:
@@ -45,10 +95,13 @@ def get_tts_config() -> TTSRuntimeConfig:
     return _runtime_config
 
 
+# =========================
+# BOOTSTRAP
+# =========================
+
 def bootstrap_tts():
     try:
-        tts_data = ClientConfigLoader.load_tts_config()
-        init_tts_config(tts_data)
-        print("[TTS] Config loaded")
+        config = load_or_create_config()
+        init_tts_config(config)
     except Exception as e:
         print("[TTS] Config load failed:", e)
