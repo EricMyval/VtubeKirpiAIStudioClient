@@ -6,7 +6,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Kirpi Client</title>
+<title>Vtube Kirpi AI Studio Client</title>
+
+<link rel="icon"
+href="{{ url_for('static', filename='img/icon.ico') }}"
+type="image/x-icon">
 
 <link rel="stylesheet"
 href="{{ url_for('static', filename='css/client-ui.css') }}">
@@ -18,7 +22,7 @@ href="{{ url_for('static', filename='css/client-ui.css') }}">
 <div class="app">
 
 <div class="header">
-<div class="title">🖥️ Kirpi Client</div>
+<div class="title">🖥️ Vtube Kirpi AI Studio Client</div>
 <div class="subtitle">Настройки клиента</div>
 </div>
 
@@ -43,7 +47,7 @@ href="{{ url_for('static', filename='css/client-ui.css') }}">
 <label>API ключ</label>
 
 <input
-type="text"
+type="password"
 name="api_key"
 value="{{ api_key }}"
 placeholder="Введите API ключ">
