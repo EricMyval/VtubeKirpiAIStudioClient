@@ -16,5 +16,10 @@ app = Flask(
 app.secret_key = "super-long-random-string-change-this-once-and-keep"
 
 
-# импортируем роуты
+# импортируем основные роуты
 from modules.web_admin import routes
+
+
+# импортируем и регистрируем alerts widget
+from modules.alerts.routes import bp as alerts_bp
+app.register_blueprint(alerts_bp)
