@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import time
+
 from modules.cabinet.service import get_api_key
 from modules.utils.constant import (
     POLL_INTERVAL,
@@ -9,6 +10,7 @@ from modules.utils.constant import (
     LAST_EVENT_URL,
     PLATFORM_TYPE_TWITCH_POINTS
 )
+
 from modules.utils.ws_client import send_ws_command
 
 
@@ -32,20 +34,12 @@ class ClientPoller:
 
         try:
 
-            # =========================
-            # EXISTING STATE
-            # =========================
-
             if os.path.exists(STATE_FILE):
 
                 with open(STATE_FILE, "r", encoding="utf-8") as f:
                     data = json.load(f) or {}
 
                 return int(data.get("last_event_id", 0))
-
-            # =========================
-            # FIRST CLIENT START
-            # =========================
 
             print("[Poller] state file not found, requesting last event id")
 
@@ -155,26 +149,12 @@ class ClientPoller:
 
                 events = data.get("events") or []
 
-                max_event_id = self.last_event_id
-
                 for event in events:
-
-                    event_id = event.get("id")
-
-                    if event_id:
-                        try:
-                            event_id = int(event_id)
-                            if event_id > max_event_id:
-                                max_event_id = event_id
-                        except Exception:
-                            pass
 
                     platform = event.get("platform")
                     ws_commands = event.get("ws_commands") or []
 
-                    # ==============================
                     # Twitch Points fallback
-                    # ==============================
 
                     if platform == PLATFORM_TYPE_TWITCH_POINTS and not ws_commands:
 
@@ -185,20 +165,25 @@ class ClientPoller:
 
                         continue
 
-                    # ==============================
-                    # Standard queue
-                    # ==============================
-
                     self.queue.add_event(event)
 
                 # ======================================
-                # SAVE STATE (ONE TIME)
+                # LAST EVENT ID
                 # ======================================
 
-                if max_event_id != self.last_event_id:
+                new_last_event_id = data.get("last_event_id")
 
-                    self.last_event_id = max_event_id
-                    self._save_state()
+                if new_last_event_id is not None:
+
+                    try:
+                        new_last_event_id = int(new_last_event_id)
+
+                        if new_last_event_id != self.last_event_id:
+                            self.last_event_id = new_last_event_id
+                            self._save_state()
+
+                    except Exception:
+                        pass
 
             except Exception as e:
 
