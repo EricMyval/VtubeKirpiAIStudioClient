@@ -64,7 +64,7 @@ class ClientPoller:
 
             data = response.json()
 
-            last_event_id = int(data.get("last_event_id", 0))
+            last_event_id = int(data.get("last_event_id", 0) + 1)
 
             print(f"[Poller] synced last_event_id={last_event_id}")
 
