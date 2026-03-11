@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import sounddevice as sd
+
 from modules.audio.devices import resolve_output_device_index
 from modules.audio.models import load_config
 from modules.tts.service import tts_create_file
@@ -17,7 +18,6 @@ class TTSRuntime:
 
         cfg = load_config()
         self.device = cfg.get("output_device")
-
         self.segment_queue = queue.Queue()
 
     # ======================================
@@ -30,7 +30,6 @@ class TTSRuntime:
 
         if not segments:
             segments = [text]
-
         self.segment_queue = queue.Queue()
 
         threading.Thread(
@@ -42,6 +41,11 @@ class TTSRuntime:
         try:
             first_segment = self.segment_queue.get(timeout=60)
         except queue.Empty:
+
+            print("[TTS] prepare timeout")
+            return None
+
+        if first_segment is None:
             return None
 
         return first_segment
@@ -63,10 +67,15 @@ class TTSRuntime:
 
             try:
                 Path(file_path).unlink(missing_ok=True)
-            except:
-                pass
+            except Exception as e:
+                print("[TTS] delete error:", e)
 
-            file_path = self.segment_queue.get()
+            try:
+                file_path = self.segment_queue.get(timeout=60)
+            except queue.Empty:
+
+                print("[TTS] queue timeout (generator died)")
+                return
 
     # ======================================
     # GENERATOR
@@ -74,33 +83,59 @@ class TTSRuntime:
 
     def _generator(self, segments, voice_file_path, voice_reference_text):
 
-        for i, segment in enumerate(segments):
+        first_segment_sent = False
 
-            start = time.perf_counter()
+        try:
 
-            try:
+            for i, segment in enumerate(segments):
 
-                file_path = tts_create_file(
-                    segment,
-                    voice_file_path,
-                    voice_reference_text
-                )
+                start = time.perf_counter()
+
+                file_path = None
+
+                for attempt in range(2):
+
+                    try:
+
+                        file_path = tts_create_file(
+                            segment,
+                            voice_file_path,
+                            voice_reference_text
+                        )
+
+                        if file_path:
+                            break
+
+                    except Exception as e:
+
+                        print(f"[TTS] generation error (attempt {attempt + 1}):", e)
 
                 elapsed = time.perf_counter() - start
 
                 print(
-                    f"[TTS] segment {i+1}/{len(segments)} "
+                    f"[TTS] segment {i + 1}/{len(segments)} "
                     f"{len(segment)} chars → {elapsed:.2f}s"
                 )
 
+                if not file_path and not first_segment_sent:
+                    print("[TTS] first segment failed")
+                    self.segment_queue.put(None)
+                    return
+
                 if file_path:
+                    first_segment_sent = True
                     self.segment_queue.put(file_path)
 
-            except Exception as e:
+        except Exception as e:
 
-                print("[TTS] generation error:", e)
+            print("[TTS] generator crashed:", e)
 
-        self.segment_queue.put(None)
+        finally:
+
+            try:
+                self.segment_queue.put(None)
+            except:
+                pass
 
     # ======================================
     # PLAY FILE
@@ -114,12 +149,14 @@ class TTSRuntime:
             print("[TTS] read error:", e)
             return
 
+        # моно → стерео
         if data.ndim == 1:
             data = np.stack([data, data], axis=1)
 
         device_index = None
 
         if self.device:
+
             try:
                 device_index = resolve_output_device_index(self.device)
             except Exception as e:
