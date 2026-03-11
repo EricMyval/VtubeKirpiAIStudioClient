@@ -125,7 +125,7 @@ class ClientPoller:
                         "Content-Type": "application/json",
                         "X-API-KEY": api_key
                     },
-                    timeout=60
+                    timeout=10
                 )
 
                 if response.status_code == 401:
