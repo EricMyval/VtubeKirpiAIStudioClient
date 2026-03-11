@@ -1,8 +1,5 @@
-import os
-import json
 import requests
 import time
-
 from modules.cabinet.service import get_api_key
 from modules.utils.constant import (
     POLL_INTERVAL,
@@ -13,17 +10,11 @@ from modules.utils.constant import (
 
 from modules.utils.ws_client import send_ws_command
 
-
-STATE_FILE = "data/db/client_state.json"
-
-
 class ClientPoller:
 
     def __init__(self, queue, worker):
-
         self.queue = queue
         self.worker = worker
-
         self.last_event_id = self._load_state()
 
     # ======================================
@@ -31,69 +22,30 @@ class ClientPoller:
     # ======================================
 
     def _load_state(self):
-
         try:
-
-            if os.path.exists(STATE_FILE):
-
-                with open(STATE_FILE, "r", encoding="utf-8") as f:
-                    data = json.load(f) or {}
-
-                return int(data.get("last_event_id", 0))
-
-            print("[Poller] state file not found, requesting last event id")
-
             api_key = get_api_key()
-
             if not api_key:
                 print("[Poller] API key missing")
                 return 0
-
             response = requests.get(
                 LAST_EVENT_URL,
                 headers={
                     "Content-Type": "application/json",
                     "X-API-KEY": api_key
                 },
-                timeout=10
+                timeout=60
             )
-
             if response.status_code != 200:
                 print(f"[Poller] failed to get last event id: {response.status_code}")
                 return 0
-
             data = response.json()
-
             last_event_id = int(data.get("last_event_id", 0) + 1)
-
             print(f"[Poller] synced last_event_id={last_event_id}")
-
             self.last_event_id = last_event_id
-            self._save_state()
-
             return last_event_id
-
         except Exception as e:
             print(f"[Poller] state load error: {e}")
             return 0
-
-    # --------------------------------------
-
-    def _save_state(self):
-
-        try:
-
-            os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-
-            with open(STATE_FILE, "w", encoding="utf-8") as f:
-                json.dump(
-                    {"last_event_id": self.last_event_id},
-                    f,
-                    indent=2
-                )
-
-        except Exception as e:
-            print(f"[Poller] state save error: {e}")
 
     # ======================================
     # MAIN LOOP
