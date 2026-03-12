@@ -16,9 +16,6 @@ app.secret_key = "4e0f9d3d7c7c9a9c4f0e4a5e1e7d5c4e8f7c6a2b1d9f0a3c7e8b2d1f6a9c4e
 
 from modules.alerts.routes import bp as alerts_bp
 app.register_blueprint(alerts_bp)
-# ==========================================
-# BASE_URL для всех HTML
-# ==========================================
 
 @app.context_processor
 def inject_base_url():
@@ -35,12 +32,7 @@ def start_web_admin():
     port = get_port()
     def _run():
         print(f"🌐 Web Admin running: http://{host}:{port}/")
-        app.run(
-            host=host,
-            port=port,
-            debug=False,
-            use_reloader=False
-        )
+        app.run(host=host, port=port, debug=False, use_reloader=False)
     th = threading.Thread(target=_run, daemon=True)
     th.start()
     time.sleep(1)
@@ -48,7 +40,6 @@ def start_web_admin():
         webbrowser.open(f"http://{host}:{port}/")
     except Exception as e:
         print("Не удалось открыть браузер:", e)
-
     return th
 
 # ==========================================
@@ -58,7 +49,6 @@ def start_web_admin():
 @app.route("/", methods=["GET"])
 def index():
     audio_cfg = get_audio_settings()
-
     return render_template(
         "index.html",
         api_key=get_api_key(),
@@ -70,18 +60,14 @@ def index():
 @app.route("/save-api", methods=["POST"])
 def save_api():
     api_key = request.form.get("api_key", "").strip()
-
     if not api_key:
         flash("API ключ не может быть пустым", "danger")
         return redirect(url_for("index"))
-
     set_api_key(api_key)
-
     try:
         bootstrap_tts()
     except Exception as e:
         flash(f"TTS ошибка: {e}", "warning")
-
     flash("API ключ сохранён", "success")
     return redirect(url_for("index"))
 
@@ -89,16 +75,13 @@ def save_api():
 @app.route("/save-audio", methods=["POST"])
 def save_audio():
     device = (request.form.get("output_device") or "").strip()
-
     if not device:
         flash("Не выбрано устройство вывода", "danger")
         return redirect(url_for("index"))
-
     try:
         set_output_device(device)
     except Exception as e:
         flash(f"Ошибка сохранения: {e}", "danger")
         return redirect(url_for("index"))
-
     flash("Аудио устройство сохранено", "success")
     return redirect(url_for("index"))
