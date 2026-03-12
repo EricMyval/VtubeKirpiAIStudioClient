@@ -1,17 +1,10 @@
 import requests
 import time
 from modules.cabinet.service import get_api_key
-from modules.utils.constant import (
-    POLL_INTERVAL,
-    API_URL,
-    LAST_EVENT_URL,
-    PLATFORM_TYPE_TWITCH_POINTS
-)
-
+from modules.utils.constant import POLL_INTERVAL, CLIENT_POLL, LAST_EVENT_URL, PLATFORM_TYPE_TWITCH_POINTS
 from modules.utils.ws_client import send_ws_command
 
 class ClientPoller:
-
     def __init__(self, queue, worker):
         self.queue = queue
         self.worker = worker
@@ -52,20 +45,15 @@ class ClientPoller:
     # ======================================
 
     def start(self):
-
         while True:
-
             try:
-
                 api_key = get_api_key()
-
                 if not api_key:
                     print("[Poller] API ключ не задан")
                     time.sleep(POLL_INTERVAL)
                     continue
-
                 response = requests.post(
-                    API_URL,
+                    CLIENT_POLL,
                     json={"last_event_id": self.last_event_id},
                     headers={
                         "Content-Type": "application/json",
@@ -73,50 +61,42 @@ class ClientPoller:
                     },
                     timeout=10
                 )
-
                 if response.status_code == 401:
                     print("[Poller] Неверный API ключ")
                     time.sleep(POLL_INTERVAL)
                     continue
-
                 if response.status_code != 200:
                     print(f"[Poller] HTTP error: {response.status_code}")
                     time.sleep(POLL_INTERVAL)
                     continue
-
                 data = response.json()
+
+                # ======================================
+                # PAUSED
+                # ======================================
+
+                self.worker.set_paused(data.get("paused"))
 
                 # ======================================
                 # WS ADDRESS
                 # ======================================
 
                 ws_address = data.get("ws_address")
-
-                if ws_address:
-                    self.worker.set_ws_address(ws_address)
+                self.worker.set_ws_address(ws_address)
 
                 # ======================================
                 # EVENTS
                 # ======================================
 
                 events = data.get("events") or []
-
                 for event in events:
-
                     platform = event.get("platform")
                     ws_commands = event.get("ws_commands") or []
-
-                    # Twitch Points fallback
-
                     if platform == PLATFORM_TYPE_TWITCH_POINTS and not ws_commands:
-
                         reward = event.get("reward")
-
                         if reward and ws_address:
                             send_ws_command(reward, ws_address)
-
                         continue
-
                     self.queue.add_event(event)
 
                 # ======================================
@@ -124,21 +104,15 @@ class ClientPoller:
                 # ======================================
 
                 new_last_event_id = data.get("last_event_id")
-
                 if new_last_event_id is not None:
-
                     try:
                         new_last_event_id = int(new_last_event_id)
-
                         if new_last_event_id != self.last_event_id:
                             self.last_event_id = new_last_event_id
                             self._save_state()
-
                     except Exception:
                         pass
-
             except Exception as e:
-
                 print(f"[Poller] error: {e}")
 
             time.sleep(POLL_INTERVAL)
