@@ -35,10 +35,7 @@ def get_port():
 
 
 def get_base_url():
-
     cfg = load_config()
-
     host = cfg.get("host", DEFAULT_CONFIG["host"])
     port = cfg.get("port", DEFAULT_CONFIG["port"])
-
     return f"http://{host}:{port}"

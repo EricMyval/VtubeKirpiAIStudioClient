@@ -27,6 +27,22 @@ href="{{ url_for('static', filename='css/client-ui.css') }}">
 </div>
 
 
+<!-- ================= FLASH ================= -->
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-container">
+{% for category, message in messages %}
+<div class="flash {{ category }}">
+{{ message }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+
+
 <!-- ================= API ================= -->
 
 <div class="card hero">
@@ -42,7 +58,7 @@ href="{{ url_for('static', filename='css/client-ui.css') }}">
 </div>
 </div>
 
-<form method="POST" action="/save-api" class="form">
+<form method="POST" action="{{ url_for('save_api') }}" class="form">
 
 <label>API ключ</label>
 
@@ -50,10 +66,11 @@ href="{{ url_for('static', filename='css/client-ui.css') }}">
 type="password"
 name="api_key"
 value="{{ api_key }}"
-placeholder="Введите API ключ">
+placeholder="Введите API ключ"
+autocomplete="off">
 
 <div class="actions">
-<button class="btn primary">
+<button type="submit" class="btn primary">
 💾 Сохранить
 </button>
 </div>
@@ -81,11 +98,11 @@ placeholder="Введите API ключ">
 
 </div>
 
-<form method="POST" action="/save-audio" class="form">
+<form method="POST" action="{{ url_for('save_audio') }}" class="form">
 
 <label>Доступные устройства</label>
 
-<select name="output_device">
+<select name="output_device" required>
 
 <option value="">-- Выберите устройство --</option>
 
@@ -99,7 +116,7 @@ placeholder="Введите API ключ">
 </select>
 
 <div class="actions">
-<button class="btn primary">
+<button type="submit" class="btn primary">
 💾 Сохранить
 </button>
 </div>
@@ -159,6 +176,7 @@ onclick="copyWidget(this)">
 
 <a href="{{ BASE_URL }}/alerts/widget"
 target="_blank"
+rel="noopener"
 class="btn primary">
 🔗 Open
 </a>
@@ -172,22 +190,31 @@ class="btn primary">
 </div>
 
 
+
 <script>
 
-function copyWidget(btn){
+async function copyWidget(btn){
 
 const card = btn.closest(".widget")
 
 const url =
 card.querySelector(".widget-url").dataset.url
 
-navigator.clipboard.writeText(url)
+try{
+
+await navigator.clipboard.writeText(url)
 
 btn.innerText="✅ Copied"
 
 setTimeout(()=>{
 btn.innerText="📋 Copy"
 },1500)
+
+}catch(e){
+
+alert("Не удалось скопировать ссылку")
+
+}
 
 }
 

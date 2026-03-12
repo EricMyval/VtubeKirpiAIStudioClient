@@ -19,5 +19,3 @@ PLATFORM_TYPE_DONATTY_AI = "donatty_ai"
 
 PLATFORM_TYPE_AFK_START = "afk_start"
 PLATFORM_TYPE_AFK_STOP = "afk_stop"
-
-PLATFORM_TYPE_DONATE_PANEL = "donate_panel"

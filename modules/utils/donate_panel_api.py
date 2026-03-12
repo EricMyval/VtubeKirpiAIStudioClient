@@ -2,11 +2,8 @@ import requests
 from modules.cabinet.service import get_api_key
 from modules.utils.constant import API_BASE
 
-
 def set_active_donate(event_id: int):
-
     api_key = get_api_key()
-
     try:
         requests.post(
             f"{API_BASE}/api/client/widgets/donate-panel/active",
@@ -22,9 +19,7 @@ def set_active_donate(event_id: int):
 
 
 def clear_active_donate():
-
     api_key = get_api_key()
-
     try:
         requests.post(
             f"{API_BASE}/api/client/widgets/donate-panel/active/clear",

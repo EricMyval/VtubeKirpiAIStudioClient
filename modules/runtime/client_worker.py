@@ -49,7 +49,7 @@ class ClientWorker:
         self._execute_ws_command_list(event.get("start_commands"))
 
         # TTS PLAY (BLOCK UNTIL FINISHED)
-        if first_segment:
+        if first_segment is not None:
             try:
                 tts_runtime.play(first_segment)
             except Exception as e:
