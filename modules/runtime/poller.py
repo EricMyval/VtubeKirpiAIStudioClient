@@ -94,7 +94,7 @@ class ClientPoller:
                 for event in events:
                     platform = event.get("platform")
                     ws_commands = event.get("ws_commands") or []
-                    if platform == PLATFORM_TYPE_TWITCH_POINTS and not ws_commands:
+                    if platform == PLATFORM_TYPE_TWITCH_POINTS and ws_commands:
                         reward = event.get("reward")
                         if reward and ws_address:
                             send_ws_command(reward, ws_address)
