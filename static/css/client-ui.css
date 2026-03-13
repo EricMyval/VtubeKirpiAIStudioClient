@@ -234,3 +234,25 @@ word-break:break-all;
 display:flex;
 gap:10px;
 }
+
+/* =========================
+   TTS WARNING
+========================= */
+
+.tts-warning{
+
+margin-top:6px;
+
+padding:10px 12px;
+
+border-radius:12px;
+
+font-size:13px;
+
+background:rgba(245,158,11,.12);
+
+border:1px solid rgba(245,158,11,.35);
+
+color:#fbbf24;
+
+}

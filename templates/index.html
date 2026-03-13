@@ -126,6 +126,65 @@ autocomplete="off">
 </div>
 
 
+<!-- ================= TTS ================= -->
+
+<div class="card">
+
+<div class="hero-header">
+
+<div class="hero-icon">🗣️</div>
+
+<div>
+<div class="hero-title">TTS движок</div>
+<div class="hero-sub">
+Выберите движок синтеза речи
+</div>
+</div>
+
+</div>
+
+<form method="POST" action="{{ url_for('save_tts') }}" class="form">
+
+<label>Движок</label>
+
+<select name="tts_engine">
+
+<option value="f5"
+{% if tts_engine == "f5" %}selected{% endif %}>
+F5 TTS (быстрый)
+</option>
+
+<option value="qwen3"
+{% if tts_engine == "qwen3" %}selected{% endif %}>
+Qwen3 TTS (эмоциональный)
+</option>
+
+<option value="vibevoice"
+{% if tts_engine == "vibevoice" %}selected{% endif %}>
+VibeVoice (ComfyUI)
+</option>
+
+</select>
+
+<div class="tts-warning">
+
+⚠ После изменения TTS необходимо перезапустить клиент
+
+</div>
+
+<div class="actions">
+
+<button type="submit" class="btn primary">
+💾 Сохранить
+</button>
+
+</div>
+
+</form>
+
+</div>
+
+
 
 <!-- ================= WIDGETS ================= -->
 

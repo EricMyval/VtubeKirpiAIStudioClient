@@ -6,6 +6,7 @@ from flask import render_template, request, redirect, url_for, flash, Flask
 from modules.cabinet.service import get_api_key, set_api_key, get_audio_settings, get_output_devices, set_output_device
 from modules.tts.config import bootstrap_tts
 from modules.utils.runtime_paths import app_root
+from modules.tts.config import get_tts_config
 import logging
 
 log = logging.getLogger("werkzeug")
@@ -48,14 +49,17 @@ def start_web_admin():
 
 @app.route("/", methods=["GET"])
 def index():
+
     audio_cfg = get_audio_settings()
+    tts_cfg = get_tts_config()
+
     return render_template(
         "index.html",
         api_key=get_api_key(),
         output_devices=get_output_devices(),
-        current_device=audio_cfg.get("output_device")
+        current_device=audio_cfg.get("output_device"),
+        tts_engine=tts_cfg.tts_engine
     )
-
 
 @app.route("/save-api", methods=["POST"])
 def save_api():
@@ -84,4 +88,28 @@ def save_audio():
         flash(f"Ошибка сохранения: {e}", "danger")
         return redirect(url_for("index"))
     flash("Аудио устройство сохранено", "success")
+    return redirect(url_for("index"))
+
+@app.route("/save-tts", methods=["POST"])
+def save_tts():
+
+    engine = (request.form.get("tts_engine") or "").strip()
+
+    available_tts_engines = ["f5", "qwen3", "vibevoice"]
+
+    if engine not in available_tts_engines:
+        flash("Неверный TTS движок", "danger")
+        return redirect(url_for("index"))
+
+    try:
+        from modules.tts.config import update_tts_engine
+        update_tts_engine(engine)
+
+        flash(
+            "Настройки TTS сохранены. Перезапустите клиент для применения.",
+            "warning"
+        )
+    except Exception as e:
+        flash(f"Ошибка сохранения: {e}", "danger")
+
     return redirect(url_for("index"))

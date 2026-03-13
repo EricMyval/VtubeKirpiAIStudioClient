@@ -1,5 +1,5 @@
 from modules.cabinet.models import load_config, save_config
-from modules.tts.tts_runtime import tts_runtime
+from modules.tts.runtime import tts_runtime
 from modules.utils.devices import clear_device_cache, list_output_devices
 
 

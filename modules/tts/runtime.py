@@ -4,8 +4,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import sounddevice as sd
-from modules.tts.service import tts_create_file
-from modules.tts.tts_segmenter import split_text
+from modules.tts.engine_router import tts_create, prepare_segments
 from modules.utils.devices import resolve_output_device_index
 from modules.cabinet.models import load_config
 
@@ -36,7 +35,7 @@ class TTSRuntime:
     # ======================================
 
     def generate(self, text, voice_file_path, voice_reference_text):
-        segments = split_text(text) or [text]
+        segments = prepare_segments(text)
         segment_queue = queue.Queue()
         self.task_queue.put((
             segments,
@@ -57,7 +56,7 @@ class TTSRuntime:
                 for segment in segments:
                     file_path = None
                     try:
-                        file_path = tts_create_file(
+                        file_path = tts_create(
                             segment,
                             voice_file,
                             voice_text

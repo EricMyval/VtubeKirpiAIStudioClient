@@ -2,7 +2,7 @@ import threading
 from modules.runtime.incoming_event_queue import incomingEventQueue
 from modules.runtime.prepared_event_queue import preparedEventQueue
 from modules.runtime.prepared_event import PreparedEvent
-from modules.tts.tts_runtime import tts_runtime
+from modules.tts.runtime import tts_runtime
 from modules.utils.constant import PLATFORM_TYPE_TWITCH_POINTS
 
 class TTSGenerator:

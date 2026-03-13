@@ -1,0 +1,54 @@
+{
+  "3": {
+    "inputs": {
+      "filename_prefix": "audio/VibeVoice",
+      "audioUI": "",
+      "audio": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "SaveAudio",
+    "_meta": {
+      "title": "SaveAudio"
+    }
+  },
+  "4": {
+    "inputs": {
+      "audio": "kirpi.wav",
+      "audioUI": ""
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "LoadAudio"
+    }
+  },
+  "11": {
+    "inputs": {
+      "model_name": "VibeVoice-Large",
+      "text": "",
+      "quantize_llm_4bit": false,
+      "attention_mode": "sdpa",
+
+      "cfg_scale": 2.8,
+      "inference_steps": 45,
+
+      "seed": 0,
+
+      "do_sample": true,
+      "temperature": 0.18,
+      "top_p": 0.9,
+      "top_k": 15,
+
+      "force_offload": false,
+      "speaker_1_voice": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "VibeVoiceTTS",
+    "_meta": {
+      "title": "VibeVoice TTS"
+    }
+  }
+}

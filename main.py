@@ -5,8 +5,8 @@ import threading
 from modules.runtime.client_worker import clientWorker
 from modules.runtime.poller import ClientPoller
 from modules.tts.config import bootstrap_tts
-from modules.tts.service import load_tts
-from modules.tts.tts_generator import ttsGenerator
+from modules.tts.engine_loader import load_engine
+from modules.tts.generator import ttsGenerator # НЕ УБИРАТЬ
 from modules.web_admin.web_admin import start_web_admin
 
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     start_web_admin()
 
     bootstrap_tts()
-    load_tts()
+    load_engine()
 
     clientPoller = ClientPoller(clientWorker)
 

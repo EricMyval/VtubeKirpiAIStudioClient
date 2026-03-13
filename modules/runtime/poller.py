@@ -4,7 +4,7 @@ import time
 from modules.alerts.alert_control import request_stop
 from modules.cabinet.service import get_api_key
 from modules.runtime.incoming_event_queue import incomingEventQueue
-from modules.tts.tts_runtime import tts_runtime
+from modules.tts.runtime import tts_runtime
 from modules.utils.constant import POLL_INTERVAL, CLIENT_POLL, LAST_EVENT_URL
 from modules.utils.ws_client import send_ws_command
 
