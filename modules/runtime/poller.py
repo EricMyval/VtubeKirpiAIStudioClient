@@ -1,12 +1,14 @@
 import requests
 import time
 from modules.cabinet.service import get_api_key
+from modules.runtime.incoming_event_queue import incomingEventQueue
 from modules.utils.constant import POLL_INTERVAL, CLIENT_POLL, LAST_EVENT_URL, PLATFORM_TYPE_TWITCH_POINTS
 from modules.utils.ws_client import send_ws_command
 
+
 class ClientPoller:
-    def __init__(self, queue, worker):
-        self.queue = queue
+
+    def __init__(self, worker):
         self.worker = worker
         self.last_event_id = self._load_state()
 
@@ -96,8 +98,8 @@ class ClientPoller:
                         reward = event.get("reward")
                         if reward and ws_address:
                             send_ws_command(reward, ws_address)
-                        continue
-                    self.queue.add_event(event)
+                    else:
+                        incomingEventQueue.add_event(event)
 
                 # ======================================
                 # LAST EVENT ID
@@ -112,6 +114,7 @@ class ClientPoller:
                             self._save_state()
                     except Exception:
                         pass
+
             except Exception as e:
                 print(f"[Poller] error: {e}")
 
