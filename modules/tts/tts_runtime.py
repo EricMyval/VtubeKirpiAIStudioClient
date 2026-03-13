@@ -15,11 +15,21 @@ class TTSRuntime:
     def __init__(self):
         cfg = load_config()
         self.device = cfg.get("output_device")
+
         self.task_queue = queue.Queue()
+        self.stop_event = threading.Event()
+
         threading.Thread(
             target=self._generation_loop,
             daemon=True
         ).start()
+
+    # ======================================
+    # SKIP
+    # ======================================
+
+    def stop(self):
+        self.stop_event.set()
 
     # ======================================
     # PUBLIC GENERATE
@@ -67,39 +77,65 @@ class TTSRuntime:
     # ======================================
 
     def play(self, first_segment, segment_queue):
+
         file_path = first_segment
+
         while True:
+
+            if self.stop_event.is_set():
+                self.stop_event.clear()
+                return
+
             if file_path is END:
                 return
+
             if file_path:
                 self._play_file(file_path)
+
                 try:
                     Path(file_path).unlink(missing_ok=True)
-                except Exception:
+                except:
                     pass
-            file_path = segment_queue.get()
+
+            try:
+                file_path = segment_queue.get(timeout=1)
+            except queue.Empty:
+                continue
 
     # ======================================
     # PLAY FILE
     # ======================================
 
     def _play_file(self, wav_path):
+
         try:
             data, sr = sf.read(str(wav_path), dtype="float32")
         except Exception as e:
             print("[TTS] read error:", e)
             return
+
         if data.ndim == 1:
             data = np.repeat(data[:, None], 2, axis=1)
+
         device_index = None
+
         if self.device:
             try:
                 device_index = resolve_output_device_index(self.device)
             except Exception as e:
                 print("[TTS] device resolve error:", e)
+
         try:
             sd.play(data, sr, device=device_index)
-            sd.wait()
+
+            while sd.get_stream().active:
+
+                if self.stop_event.is_set():
+                    sd.stop()
+                    return
+
+                sd.sleep(50)
+
         except Exception as e:
             print("[TTS] playback error:", e)
 

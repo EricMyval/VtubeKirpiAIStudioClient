@@ -1,8 +1,11 @@
 import requests
 import time
+
+from modules.alerts.alert_control import request_stop
 from modules.cabinet.service import get_api_key
 from modules.runtime.incoming_event_queue import incomingEventQueue
-from modules.utils.constant import POLL_INTERVAL, CLIENT_POLL, LAST_EVENT_URL, PLATFORM_TYPE_TWITCH_POINTS
+from modules.tts.tts_runtime import tts_runtime
+from modules.utils.constant import POLL_INTERVAL, CLIENT_POLL, LAST_EVENT_URL
 from modules.utils.ws_client import send_ws_command
 
 
@@ -87,18 +90,39 @@ class ClientPoller:
                 self.worker.set_ws_address(ws_address)
 
                 # ======================================
+                # SKIP
+                # ======================================
+
+                if data.get("skip"):
+                    tts_runtime.stop()
+                    request_stop()
+
+                # ======================================
                 # EVENTS
                 # ======================================
 
                 events = data.get("events") or []
                 for event in events:
-                    platform = event.get("platform")
-                    ws_commands = event.get("ws_commands") or []
-                    if platform == PLATFORM_TYPE_TWITCH_POINTS and ws_commands:
-                        reward = event.get("reward")
-                        if reward and ws_address:
-                            send_ws_command(reward, ws_address)
-                    else:
+
+                    # все WS команды с задержкой 0, выполняем сразу
+                    ws_commands = event.get("ws_commands", [])
+                    keep = []
+                    for com in ws_commands:
+                        if com.get("delay") == 0:
+                            command = com.get("command")
+                            if command and ws_address:
+                                send_ws_command(command, ws_address)
+                        else:
+                            keep.append(com)
+                    event["ws_commands"] = keep
+
+                    if any([
+                        event.get("alert"),
+                        event.get("formatted_text"),
+                        event.get("start_commands"),
+                        event.get("end_commands"),
+                        event.get("ws_commands"),
+                    ]):
                         incomingEventQueue.add_event(event)
 
                 # ======================================

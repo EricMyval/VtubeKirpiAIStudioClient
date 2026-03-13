@@ -115,15 +115,21 @@ html, body{
 let isShowing = false;
 let clearTimer = null;
 
-setInterval(pollAlert, 300);
+setInterval(pollAlert, 700);
 
 async function pollAlert(){
 
-    if(isShowing) return;
-
     try{
+
         const r = await fetch("/alerts/pull", { cache:"no-store" });
         const j = await r.json();
+
+        if(j.stop){
+            forceClearAlert();
+            return;
+        }
+
+        if(isShowing) return;
 
         if(j.ok && j.data){
             showAlert(j.data);
@@ -316,6 +322,36 @@ function buildText(data){
     }
 
     return box;
+}
+
+function forceClearAlert(){
+
+    const root = document.getElementById("alert-root");
+
+    if(clearTimer){
+        clearTimeout(clearTimer);
+        clearTimer = null;
+    }
+
+    if(alertAudio){
+        try{
+            alertAudio.pause();
+            alertAudio.currentTime = 0;
+        }catch(e){}
+    }
+
+    const videos = root.querySelectorAll("video");
+
+    videos.forEach(v=>{
+        try{
+            v.pause();
+            v.currentTime = 0;
+        }catch(e){}
+    });
+
+    root.innerHTML = "";
+
+    isShowing = false;
 }
 
 /* ------------------------------------------------ */
