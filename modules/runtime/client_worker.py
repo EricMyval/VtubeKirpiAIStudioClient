@@ -62,5 +62,6 @@ class ClientWorker:
             finally:
                 clear_active_donate()
                 preparedEventQueue.task_done()
+                time.sleep(PAUSED_INTERVAL)
 
 clientWorker = ClientWorker()
