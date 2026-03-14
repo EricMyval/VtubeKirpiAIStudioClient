@@ -35,7 +35,7 @@ class ClientWorker:
         first_segment = None
         if segment_queue:
             try:
-                first_segment = segment_queue.get(timeout=120)
+                first_segment = segment_queue.get(timeout=300)
             except:
                 print("[TTS] first segment timeout")
 
