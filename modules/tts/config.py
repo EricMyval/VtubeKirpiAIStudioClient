@@ -44,6 +44,9 @@ class TTSRuntimeConfig:
     # ===== VIBEVOICE =====
     vibevoice_comfyui_url: str
 
+    # ===== FISH AUDIO S2 =====
+    fishs2_url: str
+
     def to_infer_params(self, device: str) -> Dict[str, Any]:
         return {
             "mel_spec_type": self.mel_spec_type,
@@ -96,7 +99,10 @@ DEFAULT_CONFIG = TTSRuntimeConfig(
     qwen3_use_cache = True,
 
     # ===== VIBEVOICE =====
-    vibevoice_comfyui_url="http://127.0.0.1:8188"
+    vibevoice_comfyui_url="http://127.0.0.1:8188",
+
+    # ===== FISH AUDIO S2 =====
+    fishs2_url="http://127.0.0.1:8080"
 )
 
 

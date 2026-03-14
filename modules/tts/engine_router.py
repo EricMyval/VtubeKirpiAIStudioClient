@@ -3,6 +3,7 @@ from modules.tts.segmenter import split_text
 from modules.tts.voice_f5 import tts_create_file as f5_create
 from modules.tts.voice_qwen3 import tts_create_file as qwen_create
 from modules.tts.voice_vibevoice import tts_create_file as vibe_create
+from modules.tts.voice_fishs2 import tts_create_file as fishs2_create
 
 def tts_create(text, voice_file, voice_text):
 
@@ -16,6 +17,9 @@ def tts_create(text, voice_file, voice_text):
 
     if engine == "vibevoice":
         return vibe_create(text, voice_file, voice_text)
+
+    if engine == "fishs2":
+        return fishs2_create(text, voice_file, voice_text)
 
     raise RuntimeError(f"Unknown TTS engine: {engine}")
 

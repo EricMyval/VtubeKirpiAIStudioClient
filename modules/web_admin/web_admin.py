@@ -95,7 +95,7 @@ def save_tts():
 
     engine = (request.form.get("tts_engine") or "").strip()
 
-    available_tts_engines = ["f5", "qwen3", "vibevoice"]
+    available_tts_engines = ["f5", "qwen3", "vibevoice", "fishs2"]
 
     if engine not in available_tts_engines:
         flash("Неверный TTS движок", "danger")

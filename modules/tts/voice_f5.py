@@ -8,6 +8,7 @@ import torch
 import soundfile as sf
 
 from modules.tts.config import get_tts_config
+from modules.utils.constant import transliterate_lower
 
 OUTPUT_DIR = Path("data/out_voice")
 MODEL_FILE = str(Path("data/f5_tts/model_last_inference.safetensors"))
@@ -134,6 +135,7 @@ def tts_create_file(text, file_path, file_text: str) -> Path | None:
     # ------------------------------------------------------
 
     text = _normalize_text(text)
+    text = transliterate_lower(text)
 
     # ------------------------------------------------------
     # Accent
