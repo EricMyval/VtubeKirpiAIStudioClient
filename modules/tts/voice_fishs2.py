@@ -63,7 +63,7 @@ def tts_create_file(text, voice_file, voice_text):
         "temperature": 0.7,
         "top_p": 0.9,
         "repetition_penalty": 1.05,
-        "chunk_length": 100,
+        "chunk_length": 200,
         "use_memory_cache": "on"
     }
     r = requests.post(
@@ -95,4 +95,5 @@ def format_tts(text: str) -> str:
     if not re.match(r'^\[[^\]]+voice\]', text):
         text = "[playful soft voice] " + text
     text = re.sub(r'\s*(\[[^\]]+voice\])', r'\n\1', text)
+    text = re.sub(r'(\[[^\]]+voice\])\s*\n\s*', r'\1 ', text)
     return text.strip()

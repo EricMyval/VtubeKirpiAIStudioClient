@@ -26,18 +26,18 @@ class ClientWorker:
         event = prepared_event.event
         segment_queue = prepared_event.segment_queue
 
-        if event.get("alert"):
-            payload = alert_service.build_payload(event)
-            push_alert(payload)
-            if payload.get("tts_after"):
-                time.sleep(int(payload.get("duration", 6000)) / 1000)
-
         first_segment = None
         if segment_queue:
             try:
                 first_segment = segment_queue.get(timeout=300)
             except:
                 print("[TTS] first segment timeout")
+
+        if event.get("alert"):
+            payload = alert_service.build_payload(event)
+            push_alert(payload)
+            if payload.get("tts_after"):
+                time.sleep(int(payload.get("duration", 6000)) / 1000)
 
         send_command_list(event.get("start_commands"), self.ws_address)
 
