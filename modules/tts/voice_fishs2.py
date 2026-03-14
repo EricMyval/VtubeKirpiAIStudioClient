@@ -63,7 +63,7 @@ def tts_create_file(text, voice_file, voice_text):
         "temperature": 0.7,
         "top_p": 0.9,
         "repetition_penalty": 1.05,
-        "chunk_length": 200,
+        "chunk_length": 100,
         "use_memory_cache": "on"
     }
     r = requests.post(
