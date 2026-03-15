@@ -15,7 +15,7 @@
   },
   "4": {
     "inputs": {
-      "audio": "kirpi.wav",
+      "audio": "",
       "audioUI": ""
     },
     "class_type": "LoadAudio",
