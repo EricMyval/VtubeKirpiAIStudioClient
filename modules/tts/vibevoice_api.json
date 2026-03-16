@@ -30,13 +30,13 @@
       "quantize_llm_4bit": false,
       "attention_mode": "sdpa",
 
-      "cfg_scale": 2.8,
-      "inference_steps": 45,
+      "cfg_scale": 1.8,
+      "inference_steps": 15,
 
       "seed": 0,
 
-      "do_sample": true,
-      "temperature": 0.18,
+      "do_sample": false,
+      "temperature": 0.10,
       "top_p": 0.9,
       "top_k": 15,
 
