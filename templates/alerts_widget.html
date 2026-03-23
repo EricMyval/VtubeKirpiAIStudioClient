@@ -177,6 +177,7 @@ function showAlert(data){
 
     isShowing = true;
 
+    // чистим таймеры
     if(clearTimer){
         clearTimeout(clearTimer);
         clearTimer = null;
@@ -204,15 +205,17 @@ function showAlert(data){
 
     const textBlock = buildText(data);
 
-    const duration = data.duration || 6000;
+    const duration = Math.max(data.duration || 6000, 300);
     const textDelay = Math.min(data.text_delay_ms || 0, duration - 300);
 
-    // стиль анимации
+    // анимация
     textBlock.style.transition = "opacity 300ms";
 
-    // скрываем если есть задержка
+    // начальное состояние текста
     if(textDelay > 0){
         textBlock.style.opacity = "0";
+    } else {
+        textBlock.style.opacity = "1";
     }
 
     /* ---------- layout ---------- */
@@ -286,13 +289,16 @@ function showAlert(data){
 
     /* ---------- исчезновение текста ---------- */
 
+    const fadeOutTime = Math.max(duration - 300, 0);
+
     fadeOutTimer = setTimeout(() => {
         textBlock.style.opacity = "0";
-    }, duration - 300);
+    }, fadeOutTime);
 
     /* ---------- lifetime ---------- */
 
     if(videoEl){
+
         videoEl.addEventListener("ended", clearAlert, { once:true });
 
         videoEl.addEventListener("error", ()=>{
