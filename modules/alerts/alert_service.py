@@ -93,7 +93,8 @@ class ClientAlertService:
         payload = {
             "title": title,
             "message": message if alert.get("show_message", True) else "",
-            "duration": alert.get("alert_duration_ms", 6000),  # ← ВАЖНО
+            "text_delay_ms": alert.get("text_delay_ms", 0),
+            "duration": alert.get("alert_duration_ms", 6000),
             "tts_after": alert.get("donation_tts_enabled", False),
             "media": {
                 "path": media_path,

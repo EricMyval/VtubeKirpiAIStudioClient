@@ -170,6 +170,9 @@ function playAlertSound(path) {
     }
 }
 
+let textTimer = null;
+let fadeOutTimer = null;
+
 function showAlert(data){
 
     isShowing = true;
@@ -177,6 +180,16 @@ function showAlert(data){
     if(clearTimer){
         clearTimeout(clearTimer);
         clearTimer = null;
+    }
+
+    if(textTimer){
+        clearTimeout(textTimer);
+        textTimer = null;
+    }
+
+    if(fadeOutTimer){
+        clearTimeout(fadeOutTimer);
+        fadeOutTimer = null;
     }
 
     const root = document.getElementById("alert-root");
@@ -190,6 +203,17 @@ function showAlert(data){
     wrap.className = "alert-wrap";
 
     const textBlock = buildText(data);
+
+    const duration = data.duration || 6000;
+    const textDelay = Math.min(data.text_delay_ms || 0, duration - 300);
+
+    // стиль анимации
+    textBlock.style.transition = "opacity 300ms";
+
+    // скрываем если есть задержка
+    if(textDelay > 0){
+        textBlock.style.opacity = "0";
+    }
 
     /* ---------- layout ---------- */
 
@@ -246,31 +270,39 @@ function showAlert(data){
         root.appendChild(wrap);
     }
 
-    /* ---------- звук → браузер ---------- */
+    /* ---------- звук ---------- */
 
     if(data.sound){
         playAlertSound(data.sound);
     }
 
+    /* ---------- появление текста ---------- */
+
+    if(textDelay > 0){
+        textTimer = setTimeout(() => {
+            textBlock.style.opacity = "1";
+        }, textDelay);
+    }
+
+    /* ---------- исчезновение текста ---------- */
+
+    fadeOutTimer = setTimeout(() => {
+        textBlock.style.opacity = "0";
+    }, duration - 300);
+
     /* ---------- lifetime ---------- */
 
     if(videoEl){
-
-        const duration = data.duration || 6000;
-
         videoEl.addEventListener("ended", clearAlert, { once:true });
 
         videoEl.addEventListener("error", ()=>{
             clearTimer = setTimeout(clearAlert, duration);
         }, { once:true });
 
-        // fallback если видео зависло
         clearTimer = setTimeout(clearAlert, duration);
-
         return;
     }
 
-    const duration = data.duration || 8000;
     clearTimer = setTimeout(clearAlert, duration);
 }
 
