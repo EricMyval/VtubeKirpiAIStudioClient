@@ -118,4 +118,3 @@ x-transformers==2.16.2
 xxhash==3.6.0
 yarl==1.23.0
 qwen-tts==0.1.1
-omnivoice
