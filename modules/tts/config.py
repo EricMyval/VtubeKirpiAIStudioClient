@@ -25,22 +25,6 @@ class TTSRuntimeConfig:
     fix_duration: Optional[float]
     enable_accent: bool
 
-    # ===== QWEN3 =====
-    qwen3_do_sample: bool
-    qwen3_top_k: int
-    qwen3_top_p: float
-    qwen3_temperature: float
-    qwen3_repetition_penalty: float
-    qwen3_max_new_tokens: int
-
-    qwen3_subtalker_dosample: bool
-    qwen3_subtalker_top_k: int
-    qwen3_subtalker_top_p: float
-    qwen3_subtalker_temperature: float
-
-    qwen3_no_repeat_ngram_size: int
-    qwen3_use_cache: bool
-
     # ===== VIBEVOICE =====
     vibevoice_comfyui_url: str
 
@@ -89,22 +73,6 @@ DEFAULT_CONFIG = TTSRuntimeConfig(
     speed=1.0,
     fix_duration=None,
     enable_accent=True,
-
-    # ===== QWEN3 =====
-    qwen3_do_sample=True,
-    qwen3_top_k = 40,
-    qwen3_top_p = 0.93,
-    qwen3_temperature = 1.1,
-    qwen3_repetition_penalty = 1.07,
-    qwen3_max_new_tokens = 1024,
-
-    qwen3_subtalker_dosample = True,
-    qwen3_subtalker_top_k = 30,
-    qwen3_subtalker_top_p = 0.9,
-    qwen3_subtalker_temperature = 1.08,
-
-    qwen3_no_repeat_ngram_size = 3,
-    qwen3_use_cache = True,
 
     # ===== VIBEVOICE =====
     vibevoice_comfyui_url="http://127.0.0.1:8188",
