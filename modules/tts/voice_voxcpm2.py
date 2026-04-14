@@ -4,7 +4,6 @@ from pathlib import Path
 import torch
 import soundfile as sf
 from voxcpm import VoxCPM
-
 from modules.tts.config import get_tts_config
 
 OUTPUT_DIR = Path("data/out_voice")
@@ -56,11 +55,8 @@ def tts_create_file(text, file_path=None, file_text=None):
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     _number_file += 1
     output_path = OUTPUT_DIR / f"voxcpm2_{int(time.time())}_{_number_file}.wav"
-
-    # параметры (с fallback если нет в конфиге)
     cfg_value = getattr(settings, "voxcpm2_cfg_value", 2.0)
     steps = getattr(settings, "voxcpm2_inference_steps", 10)
-
     try:
         with torch.inference_mode():
             if file_path and file_text:

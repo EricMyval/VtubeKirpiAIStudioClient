@@ -2,15 +2,9 @@ CLIENT_POLL = "https://kirpi-gpt.ru/api/client/poll"
 LAST_EVENT_URL = "https://kirpi-gpt.ru/api/client/last-event-id"
 DONATE_PANEL_ACTIVE_SET = "https://kirpi-gpt.ru/widgets/donate-panel/active"
 DONATE_PANEL_ACTIVE_CLEAR = "https://kirpi-gpt.ru/widgets/donate-panel/active/clear"
-
 POLL_INTERVAL = 1.0
 PAUSED_INTERVAL = 0.5
-
 PLATFORM_TYPE_TWITCH_POINTS = "twitch_points"
-
-# ------------------------------------------------------------
-# transliteration
-# ------------------------------------------------------------
 
 def transliterate_lower(text: str) -> str:
     text = text.lower()
@@ -52,13 +46,10 @@ def transliterate_cyr_to_lat(text: str) -> str:
         "ю": "yu", "я": "ya",
     }
     text = text.lower()
-
     result = []
-
     for ch in text:
         if ch in lat:
             result.append(lat[ch])
         else:
             result.append(ch)
-
     return "".join(result)

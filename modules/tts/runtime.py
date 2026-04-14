@@ -76,26 +76,19 @@ class TTSRuntime:
     # ======================================
 
     def play(self, first_segment, segment_queue):
-
         file_path = first_segment
-
         while True:
-
             if self.stop_event.is_set():
                 self.stop_event.clear()
                 return
-
             if file_path is END:
                 return
-
             if file_path:
                 self._play_file(file_path)
-
                 try:
                     Path(file_path).unlink(missing_ok=True)
                 except:
                     pass
-
             try:
                 file_path = segment_queue.get(timeout=1)
             except queue.Empty:
