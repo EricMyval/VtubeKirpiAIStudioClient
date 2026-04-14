@@ -109,8 +109,8 @@ DEFAULT_CONFIG = TTSRuntimeConfig(
     fishs2_url="http://127.0.0.1:8080",
 
     # ===== VOXCPM2 =====
-    voxcpm2_cfg_value=2.0,
-    voxcpm2_inference_steps=10,
+    voxcpm2_cfg_value=1.8,
+    voxcpm2_inference_steps = 16,
 )
 
 
