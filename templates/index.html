@@ -171,7 +171,12 @@ Fish Audio S2 Pro (Fish-Speech API)
 
 <option value="voxcpm2"
 {% if tts_engine == "voxcpm2" %}selected{% endif %}>
-VoxCPM2 (cloning + эмоции)
+VoxCPM2 (эмоциональный)
+</option>
+
+<option value="omnivoice"
+{% if tts_engine == "omnivoice" %}selected{% endif %}>
+OmniVoice (быстрый)
 </option>
 
 </select>

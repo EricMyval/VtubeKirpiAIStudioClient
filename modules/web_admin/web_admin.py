@@ -92,15 +92,11 @@ def save_audio():
 
 @app.route("/save-tts", methods=["POST"])
 def save_tts():
-
     engine = (request.form.get("tts_engine") or "").strip()
-
-    available_tts_engines = ["f5", "qwen3", "vibevoice", "fishs2", "voxcpm2"]
-
+    available_tts_engines = ["f5", "qwen3", "vibevoice", "fishs2", "voxcpm2", "omnivoice"]
     if engine not in available_tts_engines:
         flash("Неверный TTS движок", "danger")
         return redirect(url_for("index"))
-
     try:
         from modules.tts.config import update_tts_engine
         update_tts_engine(engine)
@@ -111,5 +107,4 @@ def save_tts():
         )
     except Exception as e:
         flash(f"Ошибка сохранения: {e}", "danger")
-
     return redirect(url_for("index"))

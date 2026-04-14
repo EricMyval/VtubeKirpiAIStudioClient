@@ -2,7 +2,7 @@ import time
 from pathlib import Path
 import torch
 import soundfile as sf
-from voxcpm import VoxCPM
+from omnivoice import OmniVoice
 from modules.tts.config import get_tts_config
 
 OUTPUT_DIR = Path("data/out_voice")
@@ -16,14 +16,12 @@ _number_file = 0
 # INIT
 # =========================================
 
-def init_tts(model_id="openbmb/VoxCPM2"):
+def init_tts(model_id="k2-fsa/OmniVoice"):
     global _model
-    print("[VoxCPM2] loading...")
-    _model = VoxCPM.from_pretrained(
-        model_id,
-        load_denoiser=False
-    )
-    print("[VoxCPM2] ready")
+    print("[OmniVoice] loading...")
+    _model = OmniVoice.from_pretrained(model_id, device_map="cuda:0", dtype=torch.float16)
+    print("[OmniVoice] ready")
+
 
 # =========================================
 # GENERATION
@@ -32,43 +30,36 @@ def init_tts(model_id="openbmb/VoxCPM2"):
 def tts_create_file(text, file_path=None, file_text=None):
     global _number_file
     if _model is None:
-        raise RuntimeError("VoxCPM2 not loaded")
+        raise RuntimeError("OmniVoice not loaded")
     settings = get_tts_config()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     _number_file += 1
-    output_path = OUTPUT_DIR / f"voxcpm2_{int(time.time())}_{_number_file}.wav"
-    cfg_value = getattr(settings, "voxcpm2_cfg_value", 2.0)
-    steps = getattr(settings, "voxcpm2_inference_steps", 10)
+    output_path = OUTPUT_DIR / f"omni_{int(time.time())}_{_number_file}.wav"
+    num_step = getattr(settings, "omni_num_step", 32)
+    speed = getattr(settings, "omni_inference_speed", 1.0)
     try:
         with torch.inference_mode():
             if file_path and file_text:
                 wav = _model.generate(
                     text=text,
-                    prompt_wav_path=file_path,
-                    prompt_text=file_text,
-                    reference_wav_path=file_path,
-                    cfg_value=cfg_value,
-                    inference_timesteps=steps,
-                )
-            elif file_path:
-                wav = _model.generate(
-                    text=text,
-                    reference_wav_path=file_path,
-                    cfg_value=cfg_value,
-                    inference_timesteps=steps,
+                    ref_audio=file_path,
+                    ref_text=file_text,
+                    num_step=num_step,
+                    speed=speed,
                 )
             else:
                 wav = _model.generate(
                     text=text,
-                    cfg_value=cfg_value,
-                    inference_timesteps=steps,
+                    instruct="male",
+                    num_step=num_step,
+                    speed=speed,
                 )
         if isinstance(wav, torch.Tensor):
             wav = wav.detach().cpu().numpy()
-        sf.write(str(output_path), wav, _model.tts_model.sample_rate)
+        sf.write(str(output_path), wav[0], 24000)
         return output_path
     except Exception as e:
-        print("[VoxCPM2 ERROR]", e)
+        print("[OmniVoice ERROR]", e)
         return None
 
 
@@ -76,7 +67,7 @@ def tts_create_file(text, file_path=None, file_text=None):
 # LOAD
 # =========================================
 
-def load_voxcpm2():
+def load_omni():
     global _loaded
     if not _loaded:
         init_tts()
@@ -87,7 +78,7 @@ def load_voxcpm2():
 # UNLOAD
 # =========================================
 
-def unload_voxcpm2():
+def unload_omni():
     global _model, _loaded
     if not _loaded:
         return True
@@ -103,8 +94,8 @@ def unload_voxcpm2():
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
         _loaded = False
-        print("[VoxCPM2] unloaded")
+        print("[OmniVoice] unloaded")
         return True
     except Exception as e:
-        print("[VoxCPM2 unload error]", e)
+        print("[OmniVoice unload error]", e)
         return False

@@ -51,6 +51,10 @@ class TTSRuntimeConfig:
     voxcpm2_cfg_value: float
     voxcpm2_inference_steps: int
 
+    # ===== OMNIVOICE =====
+    omni_num_step: int
+    omni_inference_speed: float
+
     def to_infer_params(self, device: str) -> Dict[str, Any]:
         return {
             "mel_spec_type": self.mel_spec_type,
@@ -111,6 +115,10 @@ DEFAULT_CONFIG = TTSRuntimeConfig(
     # ===== VOXCPM2 =====
     voxcpm2_cfg_value=1.8,
     voxcpm2_inference_steps = 16,
+
+    # ===== OMNIVOICE =====
+    omni_num_step=32,
+    omni_inference_speed=1.0,
 )
 
 
