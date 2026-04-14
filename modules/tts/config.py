@@ -47,6 +47,10 @@ class TTSRuntimeConfig:
     # ===== FISH AUDIO S2 =====
     fishs2_url: str
 
+    # ===== VOXCPM2 =====
+    voxcpm2_cfg_value: float
+    voxcpm2_inference_steps: int
+
     def to_infer_params(self, device: str) -> Dict[str, Any]:
         return {
             "mel_spec_type": self.mel_spec_type,
@@ -102,7 +106,11 @@ DEFAULT_CONFIG = TTSRuntimeConfig(
     vibevoice_comfyui_url="http://127.0.0.1:8188",
 
     # ===== FISH AUDIO S2 =====
-    fishs2_url="http://127.0.0.1:8080"
+    fishs2_url="http://127.0.0.1:8080",
+
+    # ===== VOXCPM2 =====
+    voxcpm2_cfg_value=2.0,
+    voxcpm2_inference_steps=10,
 )
 
 

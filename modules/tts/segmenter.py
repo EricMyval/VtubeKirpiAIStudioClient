@@ -1,7 +1,5 @@
 import re
-
 from modules.tts.config import get_tts_config
-
 
 def split_text(text: str) -> list[str]:
 
