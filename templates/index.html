@@ -154,6 +154,11 @@ autocomplete="off">
 F5 TTS (быстрый)
 </option>
 
+<option value="qwen3"
+{% if tts_engine == "qwen3" %}selected{% endif %}>
+Qwen3 TTS (эмоциональный)
+</option>
+
 <option value="vibevoice"
 {% if tts_engine == "vibevoice" %}selected{% endif %}>
 VibeVoice (ComfyUI API)

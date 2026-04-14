@@ -2,7 +2,7 @@ import time
 from pathlib import Path
 import torch
 import soundfile as sf
-from omnivoice import OmniVoice
+#from omnivoice import OmniVoice
 from modules.tts.config import get_tts_config
 
 OUTPUT_DIR = Path("data/out_voice")
@@ -19,7 +19,7 @@ _number_file = 0
 def init_tts(model_id="k2-fsa/OmniVoice"):
     global _model
     print("[OmniVoice] loading...")
-    _model = OmniVoice.from_pretrained(model_id, device_map="cuda:0", dtype=torch.float16)
+    #_model = OmniVoice.from_pretrained(model_id, device_map="cuda:0", dtype=torch.float16)
     print("[OmniVoice] ready")
 
 

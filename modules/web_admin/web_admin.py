@@ -93,7 +93,7 @@ def save_audio():
 @app.route("/save-tts", methods=["POST"])
 def save_tts():
     engine = (request.form.get("tts_engine") or "").strip()
-    available_tts_engines = ["f5", "vibevoice", "fishs2", "voxcpm2", "omnivoice"]
+    available_tts_engines = ["f5", "qwen3", "vibevoice", "fishs2", "voxcpm2", "omnivoice"]
     if engine not in available_tts_engines:
         flash("Неверный TTS движок", "danger")
         return redirect(url_for("index"))
