@@ -149,43 +149,32 @@ autocomplete="off">
 
 <select name="tts_engine">
 
-<option value="f5"
-{% if tts_engine == "f5" %}selected{% endif %}>
-F5 TTS (быстрый)
-</option>
+    <option value="f5"
+    {% if tts_engine == "f5" %}selected{% endif %}>
+    F5 TTS (Быстрый, отличные ударения, только русский, 2gb VRAM)
+    </option>
 
-<option value="qwen3"
-{% if tts_engine == "qwen3" %}selected{% endif %}>
-Qwen3 TTS (эмоциональный)
-</option>
+    <option value="omnivoice"
+    {% if tts_engine == "omnivoice" %}selected{% endif %}>
+    OmniVoice (Быстрый, мультиязык, 3gb VRAM)
+    </option>
 
-<option value="vibevoice"
-{% if tts_engine == "vibevoice" %}selected{% endif %}>
-VibeVoice (ComfyUI API)
-</option>
+    <option value="voxcpm2"
+    {% if tts_engine == "voxcpm2" %}selected{% endif %}>
+    VoxCPM2 (Средняя скорость, мультиязык, 3gb VRAM)
+    </option>
 
-<option value="fishs2"
-{% if tts_engine == "fishs2" %}selected{% endif %}>
-Fish Audio S2 Pro (Fish-Speech API)
-</option>
+    <option value="qwen3"
+    {% if tts_engine == "qwen3" %}selected{% endif %}>
+    Qwen3 TTS (Медленный, нет ударений, мультиязык, 4gb VRAM)
+    </option>
 
-<option value="voxcpm2"
-{% if tts_engine == "voxcpm2" %}selected{% endif %}>
-VoxCPM2 (эмоциональный)
-</option>
-
-<option value="omnivoice"
-{% if tts_engine == "omnivoice" %}selected{% endif %}>
-OmniVoice (быстрый)
-</option>
+    <option value="vibevoice"
+    {% if tts_engine == "vibevoice" %}selected{% endif %}>
+    VibeVoice (Медленный, мультиязык, эмоциональный, 20gb VRAM ComfyUI API)
+    </option>
 
 </select>
-
-<div class="tts-warning">
-
-⚠ После изменения TTS необходимо перезапустить клиент
-
-</div>
 
 <div class="actions">
 

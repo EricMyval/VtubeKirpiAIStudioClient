@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+soundfile
+numpy
+omegaconf
+hydra-core
+ruaccent
+f5-tts
+jieba
+pypinyin

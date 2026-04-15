@@ -7,6 +7,12 @@ import zipfile
 import urllib.request
 import ssl
 
+SERVICES = [
+    "voxcpm2",
+    "qwen3",
+    "omnivoice",
+    "f5",
+]
 # -------------------------------------------------
 # GITHUB
 # -------------------------------------------------
@@ -258,16 +264,11 @@ def detect_gpu():
 # -------------------------------------------------
 
 def install_torch(cuda):
-
     if os.path.exists(TORCH_MARKER):
         return
-
     print("🔥 Installing PyTorch:", cuda)
-
     run([PYTHON, "-m", "pip", "install", "--upgrade", "pip"])
-
     if cuda == "cpu":
-
         run([
             PYTHON,
             "-m",
@@ -277,11 +278,8 @@ def install_torch(cuda):
             "torchvision==0.23.0",
             "torchaudio==2.8.0"
         ])
-
     else:
-
         index = f"https://download.pytorch.org/whl/{cuda}"
-
         run([
             PYTHON,
             "-m",
@@ -293,7 +291,6 @@ def install_torch(cuda):
             "--index-url",
             index
         ])
-
     open(TORCH_MARKER, "w").close()
 
 # -------------------------------------------------
@@ -301,24 +298,16 @@ def install_torch(cuda):
 # -------------------------------------------------
 
 def install_requirements():
-
     req_file = os.path.join(BASE_DIR, "requirements.txt")
-
     with open(req_file, "rb") as f:
         req_hash = hashlib.sha256(f.read()).hexdigest()
-
     if os.path.exists(MARKER_FILE):
-
         with open(MARKER_FILE, "r") as f:
             saved_hash = f.read()
-
         if saved_hash == req_hash:
             return
-
     print("📦 Installing requirements...")
-
     run([PYTHON, "-m", "pip", "install", "-r", req_file])
-
     with open(MARKER_FILE, "w") as f:
         f.write(req_hash)
 
@@ -327,20 +316,14 @@ def install_requirements():
 # -------------------------------------------------
 
 def run_client():
-
     main_file = os.path.join(BASE_DIR, "main.py")
-
     if not os.path.exists(main_file):
-
         print("❌ main.py not found")
         print("Client files are missing or update failed.")
         input("\nPress Enter to exit...")
         return
-
     print("🚀 Starting Kirpi AI Client")
-
     env = os.environ.copy()
-
     subprocess.call(
         [PYTHON, main_file],
         cwd=BASE_DIR,
@@ -348,23 +331,118 @@ def run_client():
     )
 
 # -------------------------------------------------
+# SERVICE: create venv
+# -------------------------------------------------
+
+def create_service_venv(service_name):
+    service_dir = os.path.join(BASE_DIR, "services", service_name)
+    venv_dir = os.path.join(service_dir, "venv")
+    python_path = os.path.join(venv_dir, "Scripts", "python.exe")
+    if os.path.exists(python_path):
+        return python_path
+    if os.path.exists(venv_dir):
+        print(f"⚠️ Removing broken venv for {service_name}")
+        shutil.rmtree(venv_dir, ignore_errors=True)
+    print(f"📦 Creating venv for {service_name}...")
+    python_cmd = find_python()
+    run([python_cmd, "-m", "venv", venv_dir, "--without-pip"])
+    python_path = os.path.join(venv_dir, "Scripts", "python.exe")
+    get_pip_path = os.path.join(service_dir, "get-pip.py")
+    if not os.path.exists(get_pip_path):
+        print("⬇ Downloading get-pip.py...")
+        download_file("https://bootstrap.pypa.io/get-pip.py", get_pip_path)
+    print("📦 Installing pip...")
+    try:
+        run([python_path, get_pip_path])
+    except Exception as e:
+        print("⚠️ get-pip failed:", e)
+    try:
+        subprocess.check_call([python_path, "-m", "pip", "--version"])
+        print("✅ pip installed")
+    except:
+        raise RuntimeError("❌ pip installation failed completely")
+    return python_path
+
+
+# -------------------------------------------------
+# SERVICE: install requirements
+# -------------------------------------------------
+
+def install_service_requirements(service_name, python_path):
+    service_dir = os.path.join(BASE_DIR, "services", service_name)
+    req_file = os.path.join(service_dir, "requirements.txt")
+    marker_file = os.path.join(service_dir, ".req_hash")
+
+    # считаем хеш requirements
+    with open(req_file, "rb") as f:
+        req_hash = hashlib.sha256(f.read()).hexdigest()
+
+    # проверка — уже ставили или нет
+    if os.path.exists(marker_file):
+        with open(marker_file, "r") as f:
+            saved_hash = f.read()
+
+        if saved_hash == req_hash:
+            print(f"✅ {service_name} requirements already installed")
+            return
+
+    print(f"📦 Installing {service_name} requirements...")
+
+    run([python_path, "-m", "pip", "install", "--upgrade", "pip"])
+
+    cuda = detect_gpu()
+    print(f"🔥 Installing Torch for {service_name}: {cuda}")
+
+    if cuda == "cpu":
+        run([
+            python_path, "-m", "pip", "install",
+            "torch==2.8.0",
+            "torchvision==0.23.0",
+            "torchaudio==2.8.0"
+        ])
+    else:
+        index = f"https://download.pytorch.org/whl/{cuda}"
+        run([
+            python_path, "-m", "pip", "install",
+            "torch==2.8.0",
+            "torchvision==0.23.0",
+            "torchaudio==2.8.0",
+            "--index-url", index
+        ])
+
+    run([python_path, "-m", "pip", "install", "-r", req_file])
+
+    # сохраняем хеш
+    with open(marker_file, "w") as f:
+        f.write(req_hash)
+
+
+# -------------------------------------------------
+# SERVICE: setup all
+# -------------------------------------------------
+
+def setup_services():
+    for service in SERVICES:
+        service_dir = os.path.join(BASE_DIR, "services", service)
+        if not os.path.exists(service_dir):
+            print(f"⚠️ Service folder not found: {service_dir}")
+            continue
+        python_path = create_service_venv(service)
+        install_service_requirements(service, python_path)
+
+
+# -------------------------------------------------
 # main
 # -------------------------------------------------
 
 def main():
-
     update_client()
-
     add_ffmpeg_to_path()
-
     create_venv()
-
     cuda = detect_gpu()
-
     install_torch(cuda)
-
     install_requirements()
-
+    setup_services()
     run_client()
 
 # -------------------------------------------------
@@ -372,10 +450,8 @@ def main():
 # -------------------------------------------------
 
 if __name__ == "__main__":
-
     try:
         main()
-
     except Exception:
         import traceback
         traceback.print_exc()
