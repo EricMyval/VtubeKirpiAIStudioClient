@@ -266,8 +266,12 @@ def detect_gpu():
 def install_torch(cuda):
     if os.path.exists(TORCH_MARKER):
         return
+
     print("🔥 Installing PyTorch:", cuda)
+
+    run([PYTHON, "-m", "ensurepip", "--upgrade"])
     run([PYTHON, "-m", "pip", "install", "--upgrade", "pip"])
+
     if cuda == "cpu":
         run([
             PYTHON,
@@ -291,6 +295,7 @@ def install_torch(cuda):
             "--index-url",
             index
         ])
+
     open(TORCH_MARKER, "w").close()
 
 # -------------------------------------------------
