@@ -4,6 +4,8 @@ __pycache__/
 *.pyc
 .idea/
 .env
+get-pip.py
+.req_hash
 web_admin_config.json
 uploads/
 KirpiLauncher.spec
