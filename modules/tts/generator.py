@@ -25,7 +25,8 @@ class TTSGenerator:
                         segment_queue = tts_runtime.generate(
                             text,
                             voice_file,
-                            voice_text
+                            voice_text,
+                            event=event
                         )
                 preparedEventQueue.add(
                     PreparedEvent(event, segment_queue)

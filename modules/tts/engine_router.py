@@ -16,12 +16,21 @@ def call_tts_service(text, voice_file, voice_text):
         print("[TTS SERVICE ERROR]", e)
         return None
 
+def song_api_create(text, voice_file, voice_text):
+    from modules.song_api.service import song_api_service
+    return song_api_service.generate_song(
+        text=text,
+        voice_path=voice_file,
+        gender="male"
+    )
+
 ENGINES = {
     "f5": call_tts_service,
     "qwen3": call_tts_service,
     "vibevoice": vibe_create,
     "voxcpm2": call_tts_service,
     "omnivoice": call_tts_service,
+    "song_api": song_api_create,
 }
 
 def tts_create(text, voice_file, voice_text):
@@ -29,6 +38,7 @@ def tts_create(text, voice_file, voice_text):
     if engine not in ENGINES:
         raise RuntimeError(f"Unknown TTS engine: {engine}")
     return ENGINES[engine](text, voice_file, voice_text)
+
 
 def split_text(text: str) -> list[str]:
     max_chunk_size = get_tts_config().max_chunk_size

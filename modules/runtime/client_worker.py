@@ -1,6 +1,7 @@
 import threading
 import time
 from modules.runtime.prepared_event_queue import preparedEventQueue
+from modules.song_api.service import song_api_service
 from modules.utils.constant import PAUSED_INTERVAL
 from modules.utils.ws_client import send_command_list
 from modules.utils.donate_panel_api import set_active_donate, clear_active_donate

@@ -1,6 +1,8 @@
 import threading
 import webbrowser
 import time
+
+from modules.song_api.service import song_api_service
 from modules.tts.engine_loader import load_engine
 from modules.web_admin.config import get_host, get_port, get_base_url
 from flask import render_template, request, redirect, url_for, flash, Flask
@@ -41,12 +43,14 @@ def start_web_admin():
 def index():
     audio_cfg = get_audio_settings()
     tts_cfg = get_tts_config()
+    song_api = song_api_service.get_settings()
     return render_template(
         "index.html",
         api_key=get_api_key(),
         output_devices=get_output_devices(),
         current_device=audio_cfg.get("output_device"),
-        tts_engine=tts_cfg.tts_engine
+        tts_engine=tts_cfg.tts_engine,
+        song_api=song_api
     )
 
 @app.route("/save-api", methods=["POST"])
@@ -92,4 +96,37 @@ def save_tts():
         flash("TTS успешно переключен 🚀", "success")
     except Exception as e:
         flash(f"Ошибка переключения: {e}", "danger")
+    return redirect(url_for("index"))
+
+@app.route("/save-song-api", methods=["POST"])
+def save_song_api():
+    try:
+        enabled = request.form.get("enabled") == "on"
+
+        api_url = (request.form.get("api_url") or "").strip()
+
+        try:
+            min_amount = float(request.form.get("min_amount") or 0)
+        except:
+            min_amount = 0
+
+        try:
+            max_amount = float(request.form.get("max_amount") or 0)
+        except:
+            max_amount = 999999
+
+        data = {
+            "enabled": enabled,
+            "api_url": api_url,
+            "min_amount": min_amount,
+            "max_amount": max_amount,
+        }
+
+        song_api_service.update_settings(data)
+
+        flash("Song API сохранён 🎵", "success")
+
+    except Exception as e:
+        flash(f"Ошибка: {e}", "danger")
+
     return redirect(url_for("index"))

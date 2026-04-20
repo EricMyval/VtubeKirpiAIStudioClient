@@ -190,6 +190,61 @@ autocomplete="off">
 
 
 
+
+<!-- ================= SONG API ================= -->
+
+<div class="card">
+
+<div class="hero-header">
+
+<div class="hero-icon">🎵</div>
+
+<div>
+<div class="hero-title">Song API (песни)</div>
+<div class="hero-sub">
+Генерация песен вместо TTS при донатах
+</div>
+</div>
+
+</div>
+
+<form method="POST" action="{{ url_for('save_song_api') }}" class="form">
+
+<label class="checkbox">
+
+<input type="checkbox" name="enabled"
+{% if song_api.enabled %}checked{% endif %}>
+Включить Song API
+
+</label>
+
+<label>API URL</label>
+<input type="text"
+name="api_url"
+value="{{ song_api.api_url }}"
+placeholder="http://127.0.0.1:5858/generate">
+
+<label>Мин. сумма доната</label>
+<input type="number"
+name="min_amount"
+value="{{ song_api.min_amount }}">
+
+<label>Макс. сумма доната</label>
+<input type="number"
+name="max_amount"
+value="{{ song_api.max_amount }}">
+
+<div class="actions">
+<button type="submit" class="btn primary">
+💾 Сохранить
+</button>
+</div>
+
+</form>
+
+</div>
+
+
 <!-- ================= WIDGETS ================= -->
 
 <div class="card">

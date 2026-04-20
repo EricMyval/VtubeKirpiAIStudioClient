@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import sounddevice as sd
+
+from modules.song_api.service import song_api_service
 from modules.tts.engine_router import tts_create, prepare_segments
 from modules.utils.devices import resolve_output_device_index
 from modules.cabinet.models import load_config
@@ -34,15 +36,37 @@ class TTSRuntime:
     # PUBLIC GENERATE
     # ======================================
 
-    def generate(self, text, voice_file_path, voice_reference_text):
+    def generate(self, text, voice_file_path, voice_reference_text, event=None):
+        # 🔥 SONG API
+        if event:
+            if song_api_service.is_enabled_for_amount(event.get("amount")):
+                print("[TTS] 🎵 switching to SONG API")
+                segments = [event.get("message")]
+                segment_queue = queue.Queue()
+                self.task_queue.put((
+                    segments,
+                    voice_file_path,
+                    voice_reference_text,
+                    segment_queue,
+                    "song_api"
+                ))
+                return segment_queue
+
+        # =========================
+        # обычная логика
+        # =========================
+
         segments = prepare_segments(text)
         segment_queue = queue.Queue()
+
         self.task_queue.put((
             segments,
             voice_file_path,
             voice_reference_text,
-            segment_queue
+            segment_queue,
+            None  # 🔥 ВАЖНО
         ))
+
         return segment_queue
 
     # ======================================
@@ -51,18 +75,29 @@ class TTSRuntime:
 
     def _generation_loop(self):
         while True:
-            segments, voice_file, voice_text, q = self.task_queue.get()
+            segments, voice_file, voice_text, q, forced_engine = self.task_queue.get()
             try:
                 for segment in segments:
                     file_path = None
+
                     try:
-                        file_path = tts_create(
-                            segment,
-                            voice_file,
-                            voice_text
-                        )
+                        if forced_engine:
+                            from modules.tts.engine_router import ENGINES
+                            file_path = ENGINES[forced_engine](
+                                segment,
+                                voice_file,
+                                voice_text
+                            )
+                        else:
+                            file_path = tts_create(
+                                segment,
+                                voice_file,
+                                voice_text
+                            )
+
                     except Exception as e:
                         print("[TTS] generation error:", e)
+
                     if file_path:
                         q.put(file_path)
             except Exception as e:
@@ -85,10 +120,11 @@ class TTSRuntime:
                 return
             if file_path:
                 self._play_file(file_path)
-                try:
-                    Path(file_path).unlink(missing_ok=True)
-                except:
-                    pass
+                if file_path and "song_api_result" not in str(file_path):
+                    try:
+                        Path(file_path).unlink(missing_ok=True)
+                    except:
+                        pass
             try:
                 file_path = segment_queue.get(timeout=1)
             except queue.Empty:
