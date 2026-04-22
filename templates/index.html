@@ -21,11 +21,6 @@ href="{{ url_for('static', filename='css/client-ui.css') }}">
 
 <div class="app">
 
-<div class="header">
-<div class="title">🖥️ Vtube Kirpi AI Studio Client</div>
-<div class="subtitle">Настройки клиента</div>
-</div>
-
 
 <!-- ================= FLASH ================= -->
 
@@ -151,12 +146,12 @@ autocomplete="off">
 
     <option value="omnivoice"
     {% if tts_engine == "omnivoice" %}selected{% endif %}>
-    OmniVoice (Быстрый, мультиязык, 3gb VRAM)
+    OmniVoice (3gb VRAM)
     </option>
 
     <option value="vibevoice"
     {% if tts_engine == "vibevoice" %}selected{% endif %}>
-    VibeVoice (Медленный, мультиязык, эмоциональный, 20gb VRAM ComfyUI API)
+    VibeVoice (20gb VRAM ComfyUI API)
     </option>
 
 </select>
