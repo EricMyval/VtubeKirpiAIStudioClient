@@ -3,7 +3,6 @@ import subprocess
 import sys
 import shutil
 import zipfile
-import time
 import requests
 
 # ----------------------------
@@ -11,11 +10,8 @@ import requests
 # ----------------------------
 
 SERVICES = ["omnivoice"]
-
 GITHUB_ZIP = "https://codeload.github.com/EricMyval/VtubeKirpiAIStudioClient/zip/refs/heads/master"
-
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
-
 IS_WIN = sys.platform == "win32"
 VENV_DIR = os.path.join(BASE_DIR, "venv")
 PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python")
@@ -42,7 +38,6 @@ def download(url, dest):
     print("⬇️ Downloading:", url)
     r = requests.get(url, timeout=60)
     r.raise_for_status()
-
     with open(dest, "wb") as f:
         f.write(r.content)
 
@@ -54,22 +49,15 @@ def download(url, dest):
 def update_client():
     tmp_zip = os.path.join(BASE_DIR, "_update.zip")
     tmp_dir = os.path.join(BASE_DIR, "_update")
-
     if os.path.exists(tmp_dir):
         shutil.rmtree(tmp_dir, ignore_errors=True)
-
     download(GITHUB_ZIP, tmp_zip)
-
     with zipfile.ZipFile(tmp_zip, "r") as z:
         z.extractall(tmp_dir)
-
     repo_dir = next((os.path.join(tmp_dir, d) for d in os.listdir(tmp_dir)), None)
-
     if not repo_dir:
         raise RuntimeError("Invalid update archive")
-
     print("📦 Applying update...")
-
     for item in os.listdir(repo_dir):
         if item in ["venv", ".git", "data"]:
             continue
