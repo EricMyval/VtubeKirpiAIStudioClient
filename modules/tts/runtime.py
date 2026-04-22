@@ -4,9 +4,8 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import sounddevice as sd
-
 from modules.song_api.service import song_api_service
-from modules.tts.engine_router import tts_create, prepare_segments
+from modules.tts.engine_router import tts_create
 from modules.utils.devices import resolve_output_device_index
 from modules.cabinet.models import load_config
 
@@ -56,11 +55,10 @@ class TTSRuntime:
         # обычная логика
         # =========================
 
-        segments = prepare_segments(text)
         segment_queue = queue.Queue()
 
         self.task_queue.put((
-            segments,
+            [text],
             voice_file_path,
             voice_reference_text,
             segment_queue,

@@ -263,3 +263,114 @@ color:#fbbf24;
     gap: 10px;
     margin-bottom: 10px;
 }
+
+details summary {
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+/* =========================
+   GRID FORM (NEW)
+========================= */
+
+.form-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+.form-grid.small{
+grid-template-columns:1fr 1fr 1fr;
+align-items:end;
+}
+
+.form-col{
+display:flex;
+flex-direction:column;
+gap:14px;
+}
+
+/* =========================
+   BLOCK
+========================= */
+
+.block{
+margin-top:10px;
+padding:14px;
+border-radius:14px;
+background:rgba(255,255,255,.04);
+border:1px solid rgba(255,255,255,.06);
+display:flex;
+flex-direction:column;
+gap:12px;
+}
+
+/* =========================
+   TEXTAREA FIX
+========================= */
+
+textarea{
+padding:14px 16px;
+border-radius:14px;
+border:1px solid rgba(255,255,255,.12);
+background:rgba(255,255,255,.08);
+color:#e5e7eb;
+font-size:14px;
+resize:vertical;
+}
+
+textarea:focus{
+outline:none;
+border-color:#8b5cf6;
+box-shadow:0 0 0 3px rgba(139,92,246,.25);
+}
+
+.card:hover{
+box-shadow:0 25px 70px rgba(124,58,237,.25);
+transition:.3s;
+}
+
+/* нижняя сетка */
+.form-grid.bottom{
+grid-template-columns: 1fr 1fr 1fr;
+align-items:end;
+margin-top:10px;
+}
+
+/* выравнивание чекбокса */
+.form-grid.bottom .checkbox{
+align-self:center;
+}
+
+/* inline элементы */
+.inline{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+/* чуть компактнее textarea */
+.block textarea{
+min-height:80px;
+}
+
+input:hover, textarea:hover{
+border-color:rgba(139,92,246,.4);
+}
+
+/* статус */
+.status-line{
+margin-bottom:12px;
+font-size:13px;
+}
+
+.status.green{color:#22c55e;}
+.status.red{color:#ef4444;}
+
+/* скрытие */
+#song_settings{
+transition:.25s;
+}
+.hidden{
+display:none;
+}

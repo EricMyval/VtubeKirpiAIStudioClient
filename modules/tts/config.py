@@ -11,7 +11,7 @@ class TTSRuntimeConfig:
     vibevoice_comfyui_url: str
 
 DEFAULT_CONFIG = TTSRuntimeConfig(
-    tts_engine="f5",
+    tts_engine="omnivoice",
     max_chunk_size=180,
     vibevoice_comfyui_url="http://127.0.0.1:8188"
 )

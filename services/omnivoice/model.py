@@ -1,11 +1,18 @@
+import os
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"
+
 import time
 from pathlib import Path
 import torch
 import soundfile as sf
 from omnivoice import OmniVoice
 
+
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "data" / "output"
+MODEL_PATH = BASE_DIR / "models" / "omnivoice"
 _model = None
 
 def load_model():
@@ -13,12 +20,14 @@ def load_model():
     if _model is not None:
         return
     print("[OmniVoice] loading...")
+
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if torch.cuda.is_available() else torch.float32
     _model = OmniVoice.from_pretrained(
-        "k2-fsa/OmniVoice",
+        str(MODEL_PATH),
         device_map=device,
-        dtype=dtype
+        dtype=dtype,
+        local_files_only=True
     )
     print(f"[OmniVoice] ready on {device}")
 

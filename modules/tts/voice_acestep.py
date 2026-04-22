@@ -1,0 +1,142 @@
+import time
+import requests
+import random
+from pathlib import Path
+from modules.song_api.config import load_config, get_random_bpm, calc_duration, get_random_genre
+from modules.song_api.service import song_api_service
+
+OUTPUT_DIR = Path("data/out_voice")
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# =========================
+# API
+# =========================
+
+def _get_api():
+    cfg = load_config()
+    return cfg.get("api_url")
+
+
+# =========================
+# CREATE TASK
+# =========================
+
+def _create_task(text, voice_file=None):
+    api = _get_api()
+    cfg = load_config()
+    files = {}
+    file_handle = None
+    try:
+        if voice_file:
+            file_handle = open(voice_file, "rb")
+            files["reference_audio"] = file_handle
+        bpm = get_random_bpm(cfg)
+        duration = calc_duration(cfg, text)
+        caption = get_random_genre(cfg)
+        data = {
+            "caption": caption,
+            "lyrics": text,
+            "think": str(cfg.get("think", True)).lower(),
+            "bpm": str(bpm),
+            "duration": str(duration),
+            "timesignature": str(cfg.get("timesignature", "4")),
+        }
+        if cfg.get("lm_model"):
+            data["use_lm"] = "true"
+        r = requests.post(
+            f"{api}/release_task",
+            data=data,
+            files=files,
+            timeout=60
+        )
+        result = r.json()
+        if result.get("code") != 200:
+            raise RuntimeError(f"ACE API error: {result}")
+        return result["data"]["task_id"]
+    finally:
+        if file_handle:
+            file_handle.close()
+
+
+# =========================
+# POLL RESULT
+# =========================
+
+def _poll_result(task_id, timeout=180):
+    api = _get_api()
+    start = time.time()
+    while True:
+        if time.time() - start > timeout:
+            raise TimeoutError("ACE generation timeout")
+        try:
+            r = requests.post(
+                f"{api}/query_result",
+                json={"task_id_list": [task_id]},
+                timeout=60
+            )
+            data = r.json()
+        except Exception:
+            time.sleep(1)
+            continue
+        if data.get("code") != 200:
+            time.sleep(1)
+            continue
+        items = data.get("data", [])
+        if not items:
+            time.sleep(1)
+            continue
+        item = items[0]
+        status = item.get("status")
+        if status == 1:
+            import json as _json
+            try:
+                songs = _json.loads(item.get("result", "[]"))
+            except Exception:
+                time.sleep(1)
+                continue
+            if songs:
+                file_url = songs[0].get("file")
+
+                if file_url:
+                    return _download(file_url)
+        elif status == 2:
+            raise RuntimeError("ACE task failed")
+        time.sleep(1)
+
+
+# =========================
+# DOWNLOAD
+# =========================
+
+def _download(url):
+    api = _get_api()
+    full_url = f"{api}{url}" if url.startswith("/") else url
+    r = requests.get(full_url, timeout=60)
+    if r.status_code != 200:
+        raise RuntimeError("Download error")
+    filename = f"ace_{int(time.time())}_{random.randint(1000,9999)}.mp3"
+    path = OUTPUT_DIR / filename
+    with open(path, "wb") as f:
+        f.write(r.content)
+    return path
+
+
+# =========================
+# MAIN ENTRY
+# =========================
+
+def tts_create_file(text: str, voice_file=None, voice_text=None) -> Path:
+    start = time.time()
+    task_id = _create_task(text, voice_file)
+    path = _poll_result(task_id)
+    print(f"[ACE TTS] done in {round(time.time() - start, 2)}s")
+    return path
+
+
+# =========================
+# INIT
+# =========================
+
+def load_acetts():
+    song_api_service.init_model()

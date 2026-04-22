@@ -12,7 +12,7 @@ def load_engine():
     if CURRENT_ENGINE == engine:
         return
     stop_service()
-    if engine in ["f5", "qwen3", "voxcpm2", "omnivoice"]:
+    if engine in ["omnivoice"]:
         start_service(engine)
         CURRENT_ENGINE = engine
     elif engine == "vibevoice":

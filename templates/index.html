@@ -149,24 +149,9 @@ autocomplete="off">
 
 <select name="tts_engine">
 
-    <option value="f5"
-    {% if tts_engine == "f5" %}selected{% endif %}>
-    F5 TTS (Быстрый, отличные ударения, только русский, 2gb VRAM)
-    </option>
-
     <option value="omnivoice"
     {% if tts_engine == "omnivoice" %}selected{% endif %}>
     OmniVoice (Быстрый, мультиязык, 3gb VRAM)
-    </option>
-
-    <option value="voxcpm2"
-    {% if tts_engine == "voxcpm2" %}selected{% endif %}>
-    VoxCPM2 (Средняя скорость, мультиязык, 3gb VRAM)
-    </option>
-
-    <option value="qwen3"
-    {% if tts_engine == "qwen3" %}selected{% endif %}>
-    Qwen3 TTS (Медленный, нет ударений, мультиязык, 4gb VRAM)
     </option>
 
     <option value="vibevoice"
@@ -208,31 +193,128 @@ autocomplete="off">
 
 </div>
 
+<!-- 🔥 статус API -->
+<div class="status-line">
+{% if models_data.error %}
+<span class="status red">● API OFFLINE</span>
+{% else %}
+<span class="status green">● API ONLINE</span>
+{% endif %}
+</div>
+
 <form method="POST" action="{{ url_for('save_song_api') }}" class="form">
 
-<label class="checkbox">
+<!-- SWITCH -->
 
-<input type="checkbox" name="enabled"
+<label class="checkbox">
+<input type="checkbox" id="song_enabled" name="enabled"
 {% if song_api.enabled %}checked{% endif %}>
 Включить Song API
-
 </label>
 
-<label>API URL</label>
-<input type="text"
-name="api_url"
-value="{{ song_api.api_url }}"
-placeholder="http://127.0.0.1:5858/generate">
 
-<label>Мин. сумма доната</label>
-<input type="number"
-name="min_amount"
+<!-- 🔽 ВСЕ НАСТРОЙКИ -->
+
+<div id="song_settings">
+
+<div class="form-grid">
+
+<!-- ЛЕВАЯ КОЛОНКА -->
+<div class="form-col">
+
+<label>API URL</label>
+<input type="text" name="api_url"
+value="{{ song_api.api_url }}">
+
+<label>Мин. донат</label>
+<input type="number" name="min_amount"
 value="{{ song_api.min_amount }}">
 
-<label>Макс. сумма доната</label>
-<input type="number"
-name="max_amount"
+<label>Макс. донат</label>
+<input type="number" name="max_amount"
 value="{{ song_api.max_amount }}">
+
+</div>
+
+
+<!-- ПРАВАЯ КОЛОНКА -->
+<div class="form-col">
+
+<label>BPM</label>
+<input type="text" name="bpm_list"
+value="{{ song_api.bpm_list | join(',') }}"
+placeholder="180,200,220">
+
+<label>Размер такта</label>
+<input type="text" name="timesignature"
+value="{{ song_api.timesignature }}">
+
+<label>Модель</label>
+<select name="model">
+{% for m in models_data.models %}
+<option value="{{ m.name }}"
+{% if m.name == song_api.model %}selected{% endif %}>
+{{ m.name }} {% if m.is_loaded %}✅{% endif %}
+</option>
+{% endfor %}
+</select>
+
+<label>LM модель</label>
+<select name="lm_model">
+<option value="">Не использовать</option>
+{% for lm in models_data.lm_models %}
+<option value="{{ lm.name }}"
+{% if lm.name == song_api.lm_model %}selected{% endif %}>
+{{ lm.name }} {% if lm.is_loaded %}🧠{% endif %}
+</option>
+{% endfor %}
+</select>
+
+</div>
+
+</div>
+
+
+<!-- 🎵 ЖАНРЫ -->
+
+<div class="block">
+
+<label>Жанры</label>
+
+<textarea name="genres" rows="3"
+placeholder="каждая строка = отдельный жанр">{{ song_api.genres | join('\n') }}</textarea>
+
+</div>
+
+
+<!-- ⚙️ НИЖНИЙ РЯД -->
+
+<div class="form-grid bottom">
+
+<label class="checkbox">
+<input type="checkbox" name="think"
+{% if song_api.think %}checked{% endif %}>
+Think режим
+</label>
+
+<div>
+<label>Мин. длительность</label>
+<input type="number" name="duration_min"
+value="{{ song_api.duration_min }}">
+</div>
+
+<div>
+<label>Макс. длительность</label>
+<input type="number" name="duration_max"
+value="{{ song_api.duration_max }}">
+</div>
+
+</div>
+
+</div>
+
+
+<!-- SAVE -->
 
 <div class="actions">
 <button type="submit" class="btn primary">
@@ -311,6 +393,10 @@ class="btn primary">
 
 <script>
 
+// =========================
+// COPY WIDGET
+// =========================
+
 async function copyWidget(btn){
 
 const card = btn.closest(".widget")
@@ -335,6 +421,46 @@ alert("Не удалось скопировать ссылку")
 }
 
 }
+
+
+// =========================
+// SONG API TOGGLE
+// =========================
+
+function initSongToggle(){
+
+const toggle = document.getElementById("song_enabled")
+const block = document.getElementById("song_settings")
+
+if(!toggle || !block) return
+
+function update(){
+
+if(toggle.checked){
+block.classList.remove("hidden")
+}else{
+block.classList.add("hidden")
+}
+
+}
+
+toggle.addEventListener("change", update)
+
+// init при загрузке
+update()
+
+}
+
+
+// =========================
+// INIT
+// =========================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+initSongToggle()
+
+})
 
 </script>
 
