@@ -81,13 +81,18 @@ def is_venv_valid(py):
 
 def detect_cuda():
     try:
+        if IS_WIN:
+            smi = r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
+        else:
+            smi = "nvidia-smi"
+
         out = subprocess.check_output(
-            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+            [smi, "--query-gpu=name", "--format=csv,noheader"],
             stderr=subprocess.DEVNULL,
-            timeout=2  # 🔥 защита от зависания
+            timeout=2
         ).decode().lower()
 
-        cu = "cpu"
+        print("🎮 GPU:", out.strip())
 
         if "rtx" in out:
             match = re.search(r"rtx\s*(\d{4})", out)
@@ -95,23 +100,49 @@ def detect_cuda():
                 series = match.group(1)[0]
 
                 if series == "5":
-                    cu = "cu129"
+                    return "cu129"
                 elif series == "4":
-                    cu = "cu124"
+                    return "cu124"
                 elif series == "3":
-                    cu = "cu121"
+                    return "cu121"
                 elif series == "2":
-                    cu = "cu118"
+                    return "cu118"
 
-        print("🎮 GPU:", out.strip())
-        print("⚙️ Selected CUDA:", cu)
-
-        return cu
+        print("⚠️ Unknown GPU → fallback to manual")
 
     except Exception as e:
         print("⚠️ GPU detect failed:", e)
 
-    return "cpu"
+    # ----------------------------
+    # MANUAL SELECT
+    # ----------------------------
+
+    if not sys.stdin or not sys.stdin.isatty():
+        print("⚠️ No console → fallback CPU")
+        return "cpu"
+
+    print("\n❓ Не удалось определить GPU. Выбери вручную:")
+    print("1) RTX 50xx (cu129)")
+    print("2) RTX 40xx (cu124)")
+    print("3) RTX 30xx (cu121)")
+    print("4) RTX 20xx (cu118)")
+    print("5) CPU")
+
+    choice = input("👉 Введи 1-5: ").strip()
+
+    mapping = {
+        "1": "cu129",
+        "2": "cu124",
+        "3": "cu121",
+        "4": "cu118",
+        "5": "cpu"
+    }
+
+    cuda = mapping.get(choice, "cpu")
+
+    print("⚙️ Selected:", cuda)
+
+    return cuda
 
 
 # ----------------------------
