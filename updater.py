@@ -12,7 +12,10 @@ import time
 
 SERVICES = ["omnivoice"]
 
-BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(
+    sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
+)
+
 IS_WIN = sys.platform == "win32"
 
 VENV_DIR = os.path.join(BASE_DIR, "venv")
@@ -33,6 +36,7 @@ def is_torch_installed(py):
         return True
     except:
         return False
+
 
 def run(cmd, cwd=None):
     print("\n>>>", " ".join(cmd))
@@ -56,39 +60,31 @@ def get_file_hash(path):
 
 
 # ----------------------------
-# VENV
+# VENV CHECK
 # ----------------------------
 
 def is_venv_valid(py):
     try:
-        subprocess.check_call([py, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call(
+            [py, "--version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
         return True
     except:
         return False
 
 
-def create_venv():
-    if is_venv_valid(PYTHON):
-        return
-
-    if os.path.exists(VENV_DIR):
-        print("🧹 Removing broken venv...")
-        shutil.rmtree(VENV_DIR, ignore_errors=True)
-
-    print("🐍 Creating venv...")
-    run([sys.executable, "-m", "venv", VENV_DIR])
-    run([PYTHON, "-m", "ensurepip"])
-
-
 # ----------------------------
-# CUDA DETECT
+# CUDA DETECT (SAFE)
 # ----------------------------
 
 def detect_cuda():
     try:
         out = subprocess.check_output(
             ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
+            timeout=2  # 🔥 защита от зависания
         ).decode().lower()
 
         cu = "cpu"
@@ -119,32 +115,6 @@ def detect_cuda():
 
 
 # ----------------------------
-# INSTALL BASE (WITH CACHE)
-# ----------------------------
-
-def install_base():
-    req = os.path.join(BASE_DIR, "requirements.txt")
-    hash_file = os.path.join(VENV_DIR, ".req_hash")
-
-    if not os.path.exists(req):
-        return
-
-    current_hash = get_file_hash(req)
-
-    if os.path.exists(hash_file):
-        with open(hash_file, "r") as f:
-            if f.read().strip() == current_hash:
-                print("⚡ Base requirements up to date")
-                return
-
-    print("\n📦 Installing base requirements...")
-    run([PYTHON, "-m", "pip", "install", "-r", req])
-
-    with open(hash_file, "w") as f:
-        f.write(current_hash)
-
-
-# ----------------------------
 # SERVICE SETUP
 # ----------------------------
 
@@ -160,7 +130,11 @@ def create_service_venv(path):
         shutil.rmtree(venv, ignore_errors=True)
 
     print(f"\n🐍 Creating venv for {path}...")
-    run([sys.executable, "-m", "venv", venv])
+
+    # 🔥 фикс для exe / PyInstaller
+    python_bin = sys.executable if not getattr(sys, "frozen", False) else "python"
+
+    run([python_bin, "-m", "venv", venv])
     run([py, "-m", "ensurepip"])
 
     return py
@@ -173,7 +147,7 @@ def install_service(path, py, cuda):
     print(f"\n=== INSTALL SERVICE: {path} ===")
 
     # ----------------------------
-    # TORCH (FIX)
+    # TORCH
     # ----------------------------
 
     if not is_torch_installed(py):
@@ -240,7 +214,7 @@ def setup_services(cuda):
 
 
 # ----------------------------
-# RUN CLIENT
+# RUN CLIENT (SAFE)
 # ----------------------------
 
 def run_client():
@@ -250,22 +224,29 @@ def run_client():
         print("❌ main.py not found")
         return
 
-    if not os.path.exists(PYTHON):
-        print("❌ Python not found:", PYTHON)
-        return
+    # 🔥 fallback python
+    if os.path.exists(PYTHON):
+        py = PYTHON
+    else:
+        print("⚠️ venv python missing → fallback to system python")
+        py = sys.executable
 
     print("\n🚀 Starting client...\n")
 
-    process = subprocess.Popen(
-        [PYTHON, main],
-        cwd=BASE_DIR
-    )
+    try:
+        process = subprocess.Popen(
+            [py, main],
+            cwd=BASE_DIR
+        )
 
-    # ⛔ проверяем умер ли сразу
-    time.sleep(1)
+        # ⛔ проверка на мгновенный краш
+        time.sleep(1)
 
-    if process.poll() is not None:
-        print("❌ Client crashed instantly (exit code:", process.returncode, ")")
+        if process.poll() is not None:
+            print("❌ Client crashed instantly (exit code:", process.returncode, ")")
+
+    except Exception as e:
+        print("❌ Failed to start client:", e)
 
 
 # ----------------------------
@@ -273,20 +254,14 @@ def run_client():
 # ----------------------------
 
 def main():
-    # ❗ защита: updater должен запускаться только через launcher
     if "--run" not in sys.argv:
         print("❌ updater launched incorrectly")
         return
 
     print("⚙️ Running updater...\n")
 
-    create_venv()
-    install_base()
-
     cuda = detect_cuda()
-
     setup_services(cuda)
-
     run_client()
 
 

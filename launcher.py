@@ -1,10 +1,15 @@
 import os
 import subprocess
 import sys
-import requests
 import zipfile
 import shutil
 import time
+import hashlib
+
+try:
+    import requests
+except:
+    requests = None  # fallback если нет (но лучше включить в билд)
 
 # ----------------------------
 # CONFIG
@@ -19,14 +24,15 @@ VERSION_URL = "https://raw.githubusercontent.com/EricMyval/VtubeKirpiAIStudioCli
 
 LOCAL_VERSION_FILE = os.path.join(BASE_DIR, "version.txt")
 
+VENV_DIR = os.path.join(BASE_DIR, "venv")
+PYTHON = os.path.join(VENV_DIR, "Scripts", "python.exe")
+
 TIMEOUT_SHORT = 5
 TIMEOUT_LONG = 60
-
 
 # ----------------------------
 # UTILS
 # ----------------------------
-
 
 def safe_print(*args):
     try:
@@ -35,7 +41,26 @@ def safe_print(*args):
         pass
 
 
+def run(cmd, cwd=None):
+    safe_print(">>>", " ".join(cmd))
+    subprocess.check_call(cmd, cwd=cwd)
+
+
+def get_file_hash(path):
+    if not os.path.exists(path):
+        return None
+    with open(path, "rb") as f:
+        return hashlib.md5(f.read()).hexdigest()
+
+
+# ----------------------------
+# NETWORK
+# ----------------------------
+
 def download(url, dest):
+    if not requests:
+        raise RuntimeError("requests not available")
+
     safe_print("⬇️ Downloading:", url)
     r = requests.get(url, timeout=TIMEOUT_LONG)
     r.raise_for_status()
@@ -45,13 +70,15 @@ def download(url, dest):
 
 
 def get_remote_version():
+    if not requests:
+        return None
+
     try:
         url = VERSION_URL + "?t=" + str(int(time.time()))
         r = requests.get(url, timeout=TIMEOUT_SHORT)
         r.raise_for_status()
         return r.text.strip()
-    except Exception:
-        # ❗ тихо — это нормальный оффлайн режим
+    except:
         return None
 
 
@@ -83,7 +110,6 @@ def apply_update(repo_dir):
             if os.path.isdir(src):
                 shutil.copytree(src, dst, dirs_exist_ok=True)
             else:
-                # атомарная замена
                 tmp_dst = dst + ".tmp"
                 shutil.copy2(src, tmp_dst)
                 os.replace(tmp_dst, dst)
@@ -98,7 +124,6 @@ def update_client():
     safe_print(f"📦 Local version: {local}")
     safe_print(f"🌐 Remote version: {remote}")
 
-    # ❗ ОФФЛАЙН → НИЧЕГО НЕ ДЕЛАЕМ
     if remote is None:
         safe_print("⚡ Offline mode — skipping update")
         return
@@ -123,16 +148,13 @@ def update_client():
 
         repo_dir = next((os.path.join(tmp_dir, d) for d in os.listdir(tmp_dir)), None)
         if not repo_dir:
-            raise RuntimeError("Invalid update archive")
+            raise RuntimeError("Invalid archive")
 
         apply_update(repo_dir)
 
-        # сохраняем версию
-        try:
+        if remote:
             with open(LOCAL_VERSION_FILE, "w", encoding="utf-8") as f:
                 f.write(remote)
-        except:
-            pass
 
         safe_print("✅ Update complete")
 
@@ -140,13 +162,63 @@ def update_client():
         safe_print("⚠️ Update failed:", e)
 
     finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        if os.path.exists(tmp_zip):
+            os.remove(tmp_zip)
+
+
+# ----------------------------
+# VENV
+# ----------------------------
+
+def is_venv_valid():
+    try:
+        subprocess.check_call([PYTHON, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except:
+        return False
+
+
+def create_venv():
+    if is_venv_valid():
+        return
+
+    if os.path.exists(VENV_DIR):
+        safe_print("🧹 Removing broken venv...")
+        shutil.rmtree(VENV_DIR, ignore_errors=True)
+
+    safe_print("🐍 Creating venv...")
+    run([sys.executable, "-m", "venv", VENV_DIR])
+    run([PYTHON, "-m", "ensurepip"])
+
+
+# ----------------------------
+# BASE REQUIREMENTS
+# ----------------------------
+
+def install_base():
+    req = os.path.join(BASE_DIR, "requirements.txt")
+    hash_file = os.path.join(VENV_DIR, ".req_hash")
+
+    if not os.path.exists(req):
+        return
+
+    current_hash = get_file_hash(req)
+
+    if os.path.exists(hash_file):
         try:
-            if os.path.exists(tmp_dir):
-                shutil.rmtree(tmp_dir, ignore_errors=True)
-            if os.path.exists(tmp_zip):
-                os.remove(tmp_zip)
+            with open(hash_file, "r") as f:
+                if f.read().strip() == current_hash:
+                    safe_print("⚡ Base requirements up to date")
+                    return
         except:
             pass
+
+    safe_print("📦 Installing base requirements...")
+    run([PYTHON, "-m", "pip", "install", "-r", req])
+
+    with open(hash_file, "w") as f:
+        f.write(current_hash)
 
 
 # ----------------------------
@@ -157,7 +229,7 @@ def ensure_updater():
     if os.path.exists(UPDATER_PATH):
         return
 
-    safe_print("⬇️ updater.py missing, downloading...")
+    safe_print("⬇️ Downloading updater.py...")
 
     try:
         download(
@@ -173,15 +245,12 @@ def run_updater():
         safe_print("❌ updater.py not found")
         return
 
-    safe_print("🚀 Launching updater...\n")
+    safe_print("🚀 Starting updater...\n")
 
-    try:
-        subprocess.Popen(   # ❗ ВАЖНО: Popen, не call
-            [sys.executable, UPDATER_PATH, "--run"],
-            cwd=BASE_DIR
-        )
-    except Exception as e:
-        safe_print("❌ Failed to launch updater:", e)
+    subprocess.Popen(
+        [sys.executable, UPDATER_PATH, "--run"],
+        cwd=BASE_DIR
+    )
 
 
 # ----------------------------
@@ -191,10 +260,13 @@ def run_updater():
 def main():
     if "--run" in sys.argv:
         return
-    safe_print("⚙️ Checking for updates...\n")
+
+    safe_print("⚙️ Launcher started\n")
+
     update_client()
+    create_venv()
+    install_base()
     ensure_updater()
-    safe_print("🚀 Starting updater...\n")
     run_updater()
 
 
