@@ -250,12 +250,21 @@ def run_client():
         return
 
     if not os.path.exists(PYTHON):
-        print("❌ venv python not found")
+        print("❌ Python not found:", PYTHON)
         return
 
     print("\n🚀 Starting client...\n")
 
-    subprocess.Popen([PYTHON, main], cwd=BASE_DIR)
+    process = subprocess.Popen(
+        [PYTHON, main],
+        cwd=BASE_DIR
+    )
+
+    # ⛔ проверяем умер ли сразу
+    time.sleep(1)
+
+    if process.poll() is not None:
+        print("❌ Client crashed instantly (exit code:", process.returncode, ")")
 
 
 # ----------------------------
