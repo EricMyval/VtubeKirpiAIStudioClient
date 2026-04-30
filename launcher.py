@@ -86,39 +86,52 @@ def get_venv_python():
 # NETWORK
 # ----------------------------
 
-def download(url, dest):
-    log("⬇️ Downloading:", url)
-
-    try:
-        with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
-            data = r.read()
-    except:
-        log("⚠️ SSL failed → retry without verification")
-        ctx = ssl._create_unverified_context()
-        with urllib.request.urlopen(url, context=ctx, timeout=TIMEOUT) as r:
-            data = r.read()
-
-    if not data:
-        raise RuntimeError("Download returned empty data")
-
-    with open(dest, "wb") as f:
-        f.write(data)
-
-
-def get_remote_version():
-    try:
-        url = VERSION_URL + "?t=" + str(int(time.time()))
-
+def download(url, dest, retries=5):
+    for attempt in range(retries):
         try:
-            with urllib.request.urlopen(url, timeout=5) as r:
-                return r.read().decode().strip()
-        except:
-            ctx = ssl._create_unverified_context()
-            with urllib.request.urlopen(url, context=ctx, timeout=5) as r:
-                return r.read().decode().strip()
+            log(f"⬇️ Downloading ({attempt+1}/{retries}):", url)
 
-    except:
-        return None
+            try:
+                with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
+                    data = r.read()
+            except:
+                ctx = ssl._create_unverified_context()
+                with urllib.request.urlopen(url, context=ctx, timeout=TIMEOUT) as r:
+                    data = r.read()
+
+            if not data:
+                raise RuntimeError("Empty download")
+
+            with open(dest, "wb") as f:
+                f.write(data)
+
+            return  # ✅ успех
+
+        except Exception as e:
+            log(f"⚠️ Download failed ({attempt+1}):", e)
+            time.sleep(1)
+
+    raise RuntimeError("Download failed after retries")
+
+
+def get_remote_version(retries=5):
+    for attempt in range(retries):
+        try:
+            url = VERSION_URL + "?t=" + str(int(time.time()))
+
+            try:
+                with urllib.request.urlopen(url, timeout=5) as r:
+                    return r.read().decode().strip()
+            except:
+                ctx = ssl._create_unverified_context()
+                with urllib.request.urlopen(url, context=ctx, timeout=5) as r:
+                    return r.read().decode().strip()
+
+        except Exception as e:
+            log(f"⚠️ Version fetch failed ({attempt+1}):", e)
+            time.sleep(1)
+
+    return None
 
 
 def get_local_version():
