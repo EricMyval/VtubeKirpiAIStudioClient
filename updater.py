@@ -249,12 +249,13 @@ def run_client():
         print("❌ main.py not found")
         return
 
+    if not os.path.exists(PYTHON):
+        print("❌ venv python not found")
+        return
+
     print("\n🚀 Starting client...\n")
 
-    subprocess.Popen(
-        [PYTHON, main],
-        cwd=BASE_DIR
-    )
+    subprocess.Popen([PYTHON, main], cwd=BASE_DIR)
 
 
 # ----------------------------
