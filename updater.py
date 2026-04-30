@@ -251,17 +251,9 @@ def run_client():
 
     print("\n🚀 Starting client...\n")
 
-    creationflags = 0
-    if os.name == "nt":
-        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
-
     subprocess.Popen(
         [PYTHON, main],
-        cwd=BASE_DIR,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        stdin=subprocess.DEVNULL,
-        creationflags=creationflags
+        cwd=BASE_DIR
     )
 
 
