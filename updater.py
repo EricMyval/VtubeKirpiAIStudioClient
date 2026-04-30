@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -17,7 +18,7 @@ BASE_DIR = os.path.dirname(
 )
 
 IS_WIN = sys.platform == "win32"
-
+CUDA_CONFIG_FILE = os.path.join(BASE_DIR, "cuda_config.json")
 VENV_DIR = os.path.join(BASE_DIR, "venv")
 PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python")
 
@@ -25,6 +26,40 @@ PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python")
 # ----------------------------
 # UTILS
 # ----------------------------
+
+def load_cuda_choice():
+    VALID = {"cu129", "cu124", "cu121", "cu118", "cpu"}
+
+    if os.path.exists(CUDA_CONFIG_FILE):
+        try:
+            with open(CUDA_CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                cuda = data.get("cuda")
+
+                if cuda in VALID:
+                    return cuda
+                else:
+                    print("⚠️ Invalid CUDA config → ignoring")
+
+        except Exception as e:
+            print("⚠️ Failed to read CUDA config:", e)
+
+    return None
+
+
+def save_cuda_choice(cuda):
+    try:
+        tmp_file = CUDA_CONFIG_FILE + ".tmp"
+
+        with open(tmp_file, "w", encoding="utf-8") as f:
+            json.dump({"cuda": cuda}, f, indent=2)
+
+        os.replace(tmp_file, CUDA_CONFIG_FILE)
+
+        print(f"💾 CUDA config saved: {cuda}")
+
+    except Exception as e:
+        print("⚠️ Failed to save CUDA config:", e)
 
 def is_torch_installed(py):
     try:
@@ -80,6 +115,19 @@ def is_venv_valid(py):
 # ----------------------------
 
 def detect_cuda():
+    VALID = {"cu129", "cu124", "cu121", "cu118", "cpu"}
+
+    # ----------------------------
+    # LOAD SAVED
+    # ----------------------------
+    saved = load_cuda_choice()
+    if saved:
+        print(f"⚙️ Using saved CUDA config: {saved}")
+        return saved
+
+    # ----------------------------
+    # NVIDIA-SMI FIND
+    # ----------------------------
     def find_nvidia_smi():
         paths = [
             "nvidia-smi",
@@ -103,7 +151,6 @@ def detect_cuda():
     # ----------------------------
     # NVIDIA-SMI DETECT
     # ----------------------------
-
     smi = find_nvidia_smi()
 
     if smi:
@@ -120,16 +167,21 @@ def detect_cuda():
             if match:
                 series = match.group(1)[0]
 
-                if series == "5":
-                    return "cu129"
-                elif series == "4":
-                    return "cu124"
-                elif series == "3":
-                    return "cu121"
-                elif series == "2":
-                    return "cu118"
+                cuda_map = {
+                    "5": "cu129",
+                    "4": "cu124",
+                    "3": "cu121",
+                    "2": "cu118",
+                }
 
-            print("⚠️ Неизвестная серия GPU → ручной выбор")
+                cuda = cuda_map.get(series)
+
+                if cuda:
+                    print(f"⚙️ Auto-detected CUDA: {cuda}")
+                    save_cuda_choice(cuda)
+                    return cuda
+
+            print("⚠️ Неизвестная серия GPU → fallback")
 
         except Exception as e:
             print("⚠️ Ошибка nvidia-smi:", e)
@@ -138,25 +190,28 @@ def detect_cuda():
         print("⚠️ nvidia-smi не найден")
 
     # ----------------------------
-    # TORCH FALLBACK
+    # TORCH FALLBACK (SAFE)
     # ----------------------------
-
     try:
         import torch
         if torch.cuda.is_available():
-            print("🔥 CUDA обнаружена через torch → используем cu121")
+            print("🔥 CUDA доступна, но модель GPU неизвестна → fallback cu121 (safe)")
+            save_cuda_choice("cu121")
             return "cu121"
     except:
         pass
 
     # ----------------------------
-    # MANUAL SELECT
+    # NO CONSOLE → CPU
     # ----------------------------
-
     if not sys.stdin or not sys.stdin.isatty():
         print("⚠️ Нет консоли → fallback CPU")
+        save_cuda_choice("cpu")
         return "cpu"
 
+    # ----------------------------
+    # MANUAL SELECT
+    # ----------------------------
     print("\n❓ Не удалось определить видеокарту. Выбери вручную:")
     print("1) RTX 50xx (cu129)")
     print("2) RTX 40xx (cu124)")
@@ -168,6 +223,7 @@ def detect_cuda():
         choice = input("👉 Введи 1-5: ").strip()
     except:
         print("⚠️ Ошибка ввода → CPU")
+        save_cuda_choice("cpu")
         return "cpu"
 
     mapping = {
@@ -181,6 +237,8 @@ def detect_cuda():
     cuda = mapping.get(choice, "cpu")
 
     print("⚙️ Выбрано:", cuda)
+
+    save_cuda_choice(cuda)
 
     return cuda
 
