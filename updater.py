@@ -80,21 +80,42 @@ def is_venv_valid(py):
 # ----------------------------
 
 def detect_cuda():
-    try:
-        if IS_WIN:
-            smi = r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
-        else:
-            smi = "nvidia-smi"
+    def find_nvidia_smi():
+        paths = [
+            "nvidia-smi",
+            r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe",
+            r"C:\Windows\System32\nvidia-smi.exe",
+        ]
 
-        out = subprocess.check_output(
-            [smi, "--query-gpu=name", "--format=csv,noheader"],
-            stderr=subprocess.DEVNULL,
-            timeout=2
-        ).decode().lower()
+        for p in paths:
+            try:
+                subprocess.check_output(
+                    [p, "-h"],
+                    stderr=subprocess.DEVNULL,
+                    timeout=2
+                )
+                return p
+            except:
+                continue
 
-        print("🎮 GPU:", out.strip())
+        return None
 
-        if "rtx" in out:
+    # ----------------------------
+    # NVIDIA-SMI DETECT
+    # ----------------------------
+
+    smi = find_nvidia_smi()
+
+    if smi:
+        try:
+            out = subprocess.check_output(
+                [smi, "--query-gpu=name", "--format=csv,noheader"],
+                stderr=subprocess.DEVNULL,
+                timeout=3
+            ).decode().lower()
+
+            print("🎮 GPU:", out.strip())
+
             match = re.search(r"rtx\s*(\d{4})", out)
             if match:
                 series = match.group(1)[0]
@@ -108,27 +129,46 @@ def detect_cuda():
                 elif series == "2":
                     return "cu118"
 
-        print("⚠️ Unknown GPU → fallback to manual")
+            print("⚠️ Неизвестная серия GPU → ручной выбор")
 
-    except Exception as e:
-        print("⚠️ GPU detect failed:", e)
+        except Exception as e:
+            print("⚠️ Ошибка nvidia-smi:", e)
+
+    else:
+        print("⚠️ nvidia-smi не найден")
+
+    # ----------------------------
+    # TORCH FALLBACK
+    # ----------------------------
+
+    try:
+        import torch
+        if torch.cuda.is_available():
+            print("🔥 CUDA обнаружена через torch → используем cu121")
+            return "cu121"
+    except:
+        pass
 
     # ----------------------------
     # MANUAL SELECT
     # ----------------------------
 
     if not sys.stdin or not sys.stdin.isatty():
-        print("⚠️ No console → fallback CPU")
+        print("⚠️ Нет консоли → fallback CPU")
         return "cpu"
 
-    print("\n❓ Не удалось определить GPU. Выбери вручную:")
+    print("\n❓ Не удалось определить видеокарту. Выбери вручную:")
     print("1) RTX 50xx (cu129)")
     print("2) RTX 40xx (cu124)")
     print("3) RTX 30xx (cu121)")
     print("4) RTX 20xx (cu118)")
     print("5) CPU")
 
-    choice = input("👉 Введи 1-5: ").strip()
+    try:
+        choice = input("👉 Введи 1-5: ").strip()
+    except:
+        print("⚠️ Ошибка ввода → CPU")
+        return "cpu"
 
     mapping = {
         "1": "cu129",
@@ -140,10 +180,9 @@ def detect_cuda():
 
     cuda = mapping.get(choice, "cpu")
 
-    print("⚙️ Selected:", cuda)
+    print("⚙️ Выбрано:", cuda)
 
     return cuda
-
 
 # ----------------------------
 # SERVICE SETUP
