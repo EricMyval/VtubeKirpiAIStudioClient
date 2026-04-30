@@ -17,19 +17,43 @@ _model = None
 
 def load_model():
     global _model
+
     if _model is not None:
         return
+
     print("[OmniVoice] loading...")
 
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-    _model = OmniVoice.from_pretrained(
-        str(MODEL_PATH),
-        device_map=device,
-        dtype=dtype,
-        local_files_only=True
-    )
-    print(f"[OmniVoice] ready on {device}")
+    for attempt in range(3):
+        try:
+            use_cuda = torch.cuda.is_available() and attempt < 2  # 👈 ключ
+
+            device = "cuda:0" if use_cuda else "cpu"
+            dtype = torch.float16 if use_cuda else torch.float32
+
+            print(f"[OmniVoice] attempt {attempt + 1} → device={device}")
+
+            _model = OmniVoice.from_pretrained(
+                str(MODEL_PATH),
+                device_map=device,
+                dtype=dtype,
+                local_files_only=True
+            )
+
+            print(f"[OmniVoice] ready on {device}")
+            return
+
+        except Exception as e:
+            print(f"[OmniVoice] load error (attempt {attempt + 1}):", e)
+
+            import gc
+            gc.collect()
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+            time.sleep(1)
+
+    raise RuntimeError("Model load failed")
 
 
 def generate_wav(text, voice_file=None, voice_text=None, num_step=32, speed=1.0):

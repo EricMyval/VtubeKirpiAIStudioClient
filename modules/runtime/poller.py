@@ -164,7 +164,16 @@ class ClientPoller:
                     except Exception:
                         pass
 
+            except requests.exceptions.SSLError:
+                print("[Poller] SSL issue, retrying...")
+
+            except requests.exceptions.ConnectionError:
+                print("[Poller] connection lost, retrying...")
+
+            except requests.exceptions.Timeout:
+                print("[Poller] timeout, retrying...")
+
             except Exception as e:
-                print(f"[Poller] error: {e}")
+                print(f"[Poller] unexpected error: {e}")
 
             time.sleep(POLL_INTERVAL)
