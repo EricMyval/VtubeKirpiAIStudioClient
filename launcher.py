@@ -6,6 +6,7 @@ import shutil
 import time
 import hashlib
 import urllib.request
+import ssl
 
 # ----------------------------
 # CONFIG
@@ -23,10 +24,8 @@ VERSION_URL = "https://raw.githubusercontent.com/EricMyval/VtubeKirpiAIStudioCli
 LOCAL_VERSION_FILE = os.path.join(BASE_DIR, "version.txt")
 
 VENV_DIR = os.path.join(BASE_DIR, "venv")
-PYTHON = os.path.join(VENV_DIR, "Scripts", "python.exe")
 
 TIMEOUT = 10
-
 
 # ----------------------------
 # UTILS
@@ -62,13 +61,11 @@ def get_file_hash(path):
 
 
 # ----------------------------
-# PYTHON DETECT (CRITICAL FIX)
+# PYTHON DETECT
 # ----------------------------
 
 def get_system_python():
-    candidates = ["python", "python3"]
-
-    for cmd in candidates:
+    for cmd in ["python", "python3"]:
         try:
             subprocess.check_call(
                 [cmd, "--version"],
@@ -78,18 +75,31 @@ def get_system_python():
             return cmd
         except:
             continue
-
     return None
 
 
+def get_venv_python():
+    return os.path.join(VENV_DIR, "Scripts", "python.exe")
+
+
 # ----------------------------
-# NETWORK (NO requests!)
+# NETWORK
 # ----------------------------
 
 def download(url, dest):
     log("⬇️ Downloading:", url)
-    with urllib.request.urlopen(url, timeout=TIMEOUT) as response:
-        data = response.read()
+
+    try:
+        with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
+            data = r.read()
+    except:
+        log("⚠️ SSL failed → retry without verification")
+        ctx = ssl._create_unverified_context()
+        with urllib.request.urlopen(url, context=ctx, timeout=TIMEOUT) as r:
+            data = r.read()
+
+    if not data:
+        raise RuntimeError("Download returned empty data")
 
     with open(dest, "wb") as f:
         f.write(data)
@@ -98,8 +108,15 @@ def download(url, dest):
 def get_remote_version():
     try:
         url = VERSION_URL + "?t=" + str(int(time.time()))
-        with urllib.request.urlopen(url, timeout=5) as response:
-            return response.read().decode().strip()
+
+        try:
+            with urllib.request.urlopen(url, timeout=5) as r:
+                return r.read().decode().strip()
+        except:
+            ctx = ssl._create_unverified_context()
+            with urllib.request.urlopen(url, context=ctx, timeout=5) as r:
+                return r.read().decode().strip()
+
     except:
         return None
 
@@ -148,11 +165,11 @@ def update_client():
 
     if remote is None:
         log("⚡ Offline mode — skip update")
-        return
+        return False
 
     if local == remote:
         log("✅ Already up to date")
-        return
+        return False
 
     tmp_zip = os.path.join(BASE_DIR, "_update.zip")
     tmp_dir = os.path.join(BASE_DIR, "_update")
@@ -161,6 +178,9 @@ def update_client():
         safe_remove(tmp_dir)
 
         download(GITHUB_ZIP, tmp_zip)
+
+        if not os.path.exists(tmp_zip):
+            raise RuntimeError("Download failed")
 
         with zipfile.ZipFile(tmp_zip, "r") as z:
             z.extractall(tmp_dir)
@@ -175,9 +195,11 @@ def update_client():
             f.write(remote)
 
         log("✅ Update complete")
+        return True
 
     except Exception as e:
         log("⚠️ Update failed:", e)
+        return False
 
     finally:
         safe_remove(tmp_dir)
@@ -188,21 +210,14 @@ def update_client():
 # VENV
 # ----------------------------
 
-def is_venv_valid():
-    try:
-        subprocess.check_call(
-            [PYTHON, "--version"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        return True
-    except:
-        return False
-
-
 def create_venv():
-    if is_venv_valid():
+    py = get_venv_python()
+
+    try:
+        subprocess.check_call([py, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return
+    except:
+        pass
 
     safe_remove(VENV_DIR)
 
@@ -211,12 +226,14 @@ def create_venv():
     python_bin = get_system_python()
 
     if not python_bin:
-        log("❌ Python not found on system")
+        log("❌ Python not found")
         input("Install Python and press Enter...")
         sys.exit(1)
 
     run([python_bin, "-m", "venv", VENV_DIR])
-    run([PYTHON, "-m", "ensurepip"])
+
+    py = get_venv_python()
+    run([py, "-m", "ensurepip"])
 
 
 # ----------------------------
@@ -224,6 +241,12 @@ def create_venv():
 # ----------------------------
 
 def install_base():
+    py = get_venv_python()
+
+    if not os.path.exists(py):
+        log("❌ venv python missing")
+        return
+
     req = os.path.join(BASE_DIR, "requirements.txt")
     hash_file = os.path.join(VENV_DIR, ".req_hash")
 
@@ -242,7 +265,7 @@ def install_base():
             pass
 
     log("📦 Installing base requirements...")
-    run([PYTHON, "-m", "pip", "install", "-r", req])
+    run([py, "-m", "pip", "install", "-r", req])
 
     with open(hash_file, "w") as f:
         f.write(current_hash)
@@ -253,14 +276,27 @@ def install_base():
 # ----------------------------
 
 def run_updater():
+    py = get_venv_python()
+
     if not os.path.exists(UPDATER_PATH):
         log("❌ updater missing")
+
+        main_py = os.path.join(BASE_DIR, "main.py")
+
+        if os.path.exists(main_py):
+            log("⚠️ Fallback → running main.py")
+
+            subprocess.Popen([py, main_py], cwd=BASE_DIR)
+            return
+
+        log("👉 No updater and no main.py → cannot continue")
+        input("Press Enter...")
         return
 
     log("🚀 Starting updater...\n")
 
     subprocess.Popen(
-        [PYTHON, UPDATER_PATH, "--run"],
+        [py, UPDATER_PATH, "--run"],
         cwd=BASE_DIR
     )
 
@@ -275,7 +311,13 @@ def main():
 
     log("⚙️ Launcher started\n")
 
-    update_client()
+    updated = update_client()
+
+    if updated:
+        log("🔁 Restarting launcher...\n")
+        subprocess.Popen([sys.executable] + sys.argv)
+        sys.exit(0)
+
     create_venv()
     install_base()
     run_updater()
