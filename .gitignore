@@ -13,3 +13,4 @@ KirpiLauncher.spec
 build/
 dist/
 KirpiAIStudio.spec
+tts_service.json
