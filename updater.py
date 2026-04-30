@@ -4,6 +4,7 @@ import sys
 import shutil
 import re
 import hashlib
+import time
 
 # ----------------------------
 # CONFIG
