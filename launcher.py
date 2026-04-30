@@ -65,16 +65,85 @@ def get_file_hash(path):
 # ----------------------------
 
 def get_system_python():
-    for cmd in ["python", "python3"]:
+    candidates = ["python", "python3"]
+
+    # 1️⃣ Проверяем PATH
+    for cmd in candidates:
         try:
             subprocess.check_call(
                 [cmd, "--version"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
+
+            # Получаем реальный путь
+            if sys.platform == "win32":
+                try:
+                    out = subprocess.check_output(
+                        ["where", cmd],
+                        stderr=subprocess.DEVNULL
+                    ).decode().splitlines()
+
+                    for path in out:
+                        path = path.strip()
+
+                        # ❌ игнорим Microsoft Store shim
+                        if "WindowsApps" in path:
+                            continue
+
+                        if os.path.exists(path):
+                            print("🐍 Using python:", path)
+                            return path
+
+                except:
+                    pass
+
             return cmd
+
         except:
             continue
+
+    # 2️⃣ Проверяем where python напрямую (Windows)
+    if sys.platform == "win32":
+        try:
+            out = subprocess.check_output(
+                ["where", "python"],
+                stderr=subprocess.DEVNULL
+            ).decode().splitlines()
+
+            for path in out:
+                path = path.strip()
+
+                # ❌ игнорим Microsoft Store shim
+                if "WindowsApps" in path:
+                    continue
+
+                if os.path.exists(path):
+                    print("🐍 Using python:", path)
+                    return path
+
+        except:
+            pass
+
+    # 3️⃣ Проверяем стандартные пути установки
+    possible = [
+        r"C:\Python311\python.exe",
+        r"C:\Python310\python.exe",
+        r"C:\Python39\python.exe",
+        r"C:\Program Files\Python311\python.exe",
+        r"C:\Program Files\Python310\python.exe",
+        r"C:\Program Files\Python39\python.exe",
+        os.path.expandvars(r"%LOCALAPPDATA%\Programs\Python\Python311\python.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\Programs\Python\Python310\python.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\Programs\Python\Python39\python.exe"),
+    ]
+
+    for path in possible:
+        if os.path.exists(path):
+            print("🐍 Using python:", path)
+            return path
+
+    # ❌ Ничего не нашли
     return None
 
 
