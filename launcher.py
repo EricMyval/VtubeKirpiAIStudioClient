@@ -115,16 +115,22 @@ def detect_cuda():
             stderr=subprocess.DEVNULL
         ).decode().lower()
 
+        cu = "cpu"
+
+        if "rtx" in out:
+            if "50" in out:
+                cu = "cu129"
+            elif "40" in out:
+                cu = "cu124"
+            elif "30" in out:
+                cu = "cu121"
+            elif "20" in out:
+                cu = "cu118"
+
         print("🎮 GPU:", out.strip())
+        print("⚙️ Selected CUDA:", cu)
 
-        if "rtx 50" in out or "rtx 40" in out:
-            return "cu129"
-
-        if "rtx 30" in out:
-            return "cu121"
-
-        if "rtx 20" in out:
-            return "cu118"
+        return cu
 
     except Exception as e:
         print("⚠️ GPU detect failed:", e)
@@ -238,15 +244,11 @@ def run_client():
 # ----------------------------
 
 def main():
+    cuda = detect_cuda()
     update_client()
-
     create_venv()
     install_base()
-
-    cuda = detect_cuda()
-
     setup_services(cuda)
-
     run_client()
 
 
