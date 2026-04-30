@@ -6,7 +6,6 @@ from modules.tts.engine_loader import load_engine
 from modules.web_admin.config import get_host, get_port, get_base_url
 from flask import render_template, request, redirect, url_for, flash, Flask
 from modules.cabinet.service import get_api_key, set_api_key, get_audio_settings, get_output_devices, set_output_device
-from modules.tts.config import bootstrap_tts
 from modules.utils.runtime_paths import app_root
 from modules.tts.config import get_tts_config
 from modules.alerts.routes import bp as alerts_bp
@@ -63,11 +62,7 @@ def save_api():
         flash("API ключ не может быть пустым", "danger")
         return redirect(url_for("index"))
     set_api_key(api_key)
-    try:
-        bootstrap_tts()
-    except Exception as e:
-        flash(f"TTS ошибка: {e}", "warning")
-    flash("API ключ сохранён", "success")
+    flash("API ключ сохранён!", "success")
     return redirect(url_for("index"))
 
 
@@ -88,7 +83,7 @@ def save_audio():
 @app.route("/save-tts", methods=["POST"])
 def save_tts():
     engine = (request.form.get("tts_engine") or "").strip()
-    available_tts_engines = ["f5", "qwen3", "vibevoice", "voxcpm2", "omnivoice"]
+    available_tts_engines = ["vibevoice", "omnivoice"]
     if engine not in available_tts_engines:
         flash("Неверный TTS движок", "danger")
         return redirect(url_for("index"))
