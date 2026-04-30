@@ -250,7 +250,11 @@ def run_client():
         return
 
     print("\n🚀 Starting client...\n")
-    subprocess.call([PYTHON, main], cwd=BASE_DIR)
+
+    subprocess.Popen(
+        [PYTHON, main],
+        cwd=BASE_DIR
+    )
 
 
 # ----------------------------
@@ -258,6 +262,11 @@ def run_client():
 # ----------------------------
 
 def main():
+    # ❗ защита: updater должен запускаться только через launcher
+    if "--run" not in sys.argv:
+        print("❌ updater launched incorrectly")
+        return
+
     print("⚙️ Running updater...\n")
 
     create_venv()
@@ -266,6 +275,7 @@ def main():
     cuda = detect_cuda()
 
     setup_services(cuda)
+
     run_client()
 
 

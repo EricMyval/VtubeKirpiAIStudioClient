@@ -176,7 +176,10 @@ def run_updater():
     safe_print("🚀 Launching updater...\n")
 
     try:
-        subprocess.call([sys.executable, UPDATER_PATH], cwd=BASE_DIR)
+        subprocess.Popen(   # ❗ ВАЖНО: Popen, не call
+            [sys.executable, UPDATER_PATH, "--run"],
+            cwd=BASE_DIR
+        )
     except Exception as e:
         safe_print("❌ Failed to launch updater:", e)
 
@@ -186,10 +189,12 @@ def run_updater():
 # ----------------------------
 
 def main():
+    if "--run" in sys.argv:
+        return
     safe_print("⚙️ Checking for updates...\n")
-
     update_client()
     ensure_updater()
+    safe_print("🚀 Starting updater...\n")
     run_updater()
 
 
