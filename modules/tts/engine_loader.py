@@ -57,14 +57,18 @@ def get_port():
     cfg = load_config()
     port = cfg.get("port")
 
-    if port and is_port_free(port):
-        return port
+    if not port:
+        port = DEFAULT_PORT
+        cfg["port"] = port
+        save_config(cfg)
 
-    # если порт занят или нет — ищем новый
+    return port
+
+def allocate_port():
     port = find_free_port(DEFAULT_PORT)
+    cfg = load_config()
     cfg["port"] = port
     save_config(cfg)
-
     return port
 
 
@@ -120,6 +124,12 @@ def start_service(service_name):
     python_path = join(service_dir, "venv", "Scripts", "python.exe")
 
     port = get_port()
+
+    # если порт уже занят — значит кто-то его использует → ищем новый
+    if not is_port_free(port):
+        print(f"[TTS] port {port} busy, allocating new...")
+        port = allocate_port()
+
     url = f"http://127.0.0.1:{port}"
 
     print(f"[TTS] starting {service_name} on port {port}...")
@@ -136,7 +146,6 @@ def start_service(service_name):
         cwd=service_dir
     )
 
-    # ждём запуска
     for _ in range(40):
         if is_service_running(url):
             print(f"[TTS] {service_name} ready at {url}")

@@ -25,9 +25,8 @@ def set_output_device(device_name: str):
     config = load_config()
     config["output_device"] = device_name.strip()
     save_config(config)
-
     clear_device_cache()
-
+    tts_runtime.device = config["output_device"]
     try:
         tts_runtime.reload_device()
     except Exception:
