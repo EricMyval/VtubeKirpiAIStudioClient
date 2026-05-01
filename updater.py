@@ -364,7 +364,9 @@ def run_client():
     try:
         process = subprocess.Popen(
             [py, main],
-            cwd=BASE_DIR
+            cwd=BASE_DIR,
+            stdout=sys.stdout,
+            stderr=sys.stderr
         )
 
         # ⛔ проверка на мгновенный краш
