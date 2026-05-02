@@ -32,10 +32,7 @@ class TTSRuntime:
 
     def generate(self, text, voice_file_path, voice_reference_text, event=None):
         result_queue = queue.Queue()
-
-        # 🔥 SONG API
         if event and event.get("songs"):
-            print("[TTS] 🎵 SONG MODE (server-driven)")
             self.task_queue.put((
                 text,
                 voice_file_path,
@@ -44,8 +41,6 @@ class TTSRuntime:
                 event
             ))
             return result_queue
-
-        # 🔥 обычный TTS
         self.task_queue.put((
             text,
             voice_file_path,
