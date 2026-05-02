@@ -100,7 +100,7 @@ def detect_cuda():
                 "2": "cu118",
             }
 
-            cuda = cuda_map.get(series)
+            cuda = cuda_map.get(series, "cu121")
 
             if cuda:
                 print(f"⚙️ CUDA detected: {cuda}")
@@ -135,22 +135,65 @@ def install_torch(py, cuda):
 
     print(f"[Torch] installed={installed}, cuda={installed_cuda}")
 
-    if installed:
-        if installed_cuda:
-            print("[Torch] CUDA already present → OK")
-            return
+    # ----------------------------
+    # 1. Проверка — всё ли ок
+    # ----------------------------
+    if installed and installed_cuda:
+        print("[Torch] CUDA already present → OK")
+        return
 
-        print("[Torch] wrong version → reinstalling...")
-        run([py, "-m", "pip", "uninstall", "-y", "torch", "torchvision", "torchaudio"])
+    # ----------------------------
+    # 2. Полный снос
+    # ----------------------------
+    print("[Torch] removing old torch...")
+    run([py, "-m", "pip", "uninstall", "-y", "torch", "torchvision", "torchaudio"])
 
-    print(f"[Torch] installing for {cuda}...")
+    # ----------------------------
+    # 3. Установка CUDA версии
+    # ----------------------------
+    print(f"[Torch] installing CUDA build: {cuda}...")
 
     run([
         py, "-m", "pip", "install",
+        "--upgrade",
+        "--force-reinstall",
+        "--no-cache-dir",
         "torch", "torchvision", "torchaudio",
         "--index-url",
         f"https://download.pytorch.org/whl/{cuda}"
     ])
+
+    # ----------------------------
+    # 4. ВАЛИДАЦИЯ (критично)
+    # ----------------------------
+    print("[Torch] validating installation...")
+
+    try:
+        out = subprocess.check_output(
+            [py, "-c",
+             "import torch; "
+             "print(torch.cuda.is_available()); "
+             "print(torch.version.cuda)"],
+            stderr=subprocess.DEVNULL
+        ).decode().strip().splitlines()
+
+        cuda_available = out[0] == "True"
+        cuda_version = out[1]
+
+        print(f"[Torch] cuda_available={cuda_available}, cuda_version={cuda_version}")
+
+        if not cuda_available or cuda_version == "None":
+            raise RuntimeError("Torch installed but CUDA NOT available")
+
+    except Exception as e:
+        print("❌ CUDA install failed:", e)
+        print("💥 Likely causes:")
+        print("- wrong CUDA wheel (cuXXX)")
+        print("- outdated NVIDIA driver")
+        print("- pip installed CPU version")
+        sys.exit(1)
+
+    print("✅ Torch CUDA installation OK")
 
 # ----------------------------
 # MAIN
