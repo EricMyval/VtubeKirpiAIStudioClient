@@ -4,13 +4,9 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import sounddevice as sd
-
-from modules.song_api.service import song_api_service
 from modules.tts.engine import generate_wav
 from modules.utils.devices import resolve_output_device_index
 from modules.cabinet.models import load_config
-
-END = object()
 
 
 class TTSRuntime:
@@ -31,43 +27,33 @@ class TTSRuntime:
         self.stop_event.set()
 
     # ======================================
-    # PUBLIC GENERATE
+    # GENERATE (async → queue)
     # ======================================
 
     def generate(self, text, voice_file_path, voice_reference_text, event=None):
+        result_queue = queue.Queue()
+
         # 🔥 SONG API
-        if event:
-            if song_api_service.is_enabled_for_amount(event.get("amount")):
-                print("[TTS] 🎵 switching to SONG API")
+        if event and event.get("songs"):
+            print("[TTS] 🎵 SONG MODE (server-driven)")
+            self.task_queue.put((
+                text,
+                voice_file_path,
+                voice_reference_text,
+                result_queue,
+                "song_api"
+            ))
+            return result_queue
 
-                segments = [event.get("message")]
-                segment_queue = queue.Queue()
-
-                self.task_queue.put((
-                    segments,
-                    voice_file_path,
-                    voice_reference_text,
-                    segment_queue,
-                    "song_api"
-                ))
-
-                return segment_queue
-
-        # =========================
-        # обычная логика
-        # =========================
-
-        segment_queue = queue.Queue()
-
+        # 🔥 обычный TTS
         self.task_queue.put((
-            [text],
+            text,
             voice_file_path,
             voice_reference_text,
-            segment_queue,
+            result_queue,
             None
         ))
-
-        return segment_queue
+        return result_queue
 
     # ======================================
     # GENERATION WORKER (ONE THREAD)
@@ -75,77 +61,59 @@ class TTSRuntime:
 
     def _generation_loop(self):
         while True:
-            segments, voice_file, voice_text, q, forced_engine = self.task_queue.get()
+            text, voice_file, voice_text, q, forced_engine = self.task_queue.get()
 
             try:
-                for segment in segments:
-                    try:
-                        # 🔥 SONG API (оставляем как есть)
-                        if forced_engine == "song_api":
-                            from modules.song_api.voice_acestep import tts_create_file
+                file_path = None
 
-                            file_path = tts_create_file(
-                                segment,
-                                voice_file,
-                                voice_text
-                            )
+                try:
+                    # 🔥 SONG API
+                    if forced_engine == "song_api":
+                        from modules.song_api.voice_acestep import tts_create_file
 
-                        # 🔥 основной TTS (единый движок)
-                        else:
-                            file_path = generate_wav(
-                                segment,
-                                voice_file,
-                                voice_text
-                            )
+                        file_path = tts_create_file(
+                            text,
+                            voice_file
+                        )
 
-                    except Exception as e:
-                        print("[TTS] generation error:", e)
-                        file_path = None
-
-                    if file_path:
-                        q.put(file_path)
+                    # 🔥 основной TTS
                     else:
-                        print("[TTS] empty result")
+                        file_path = generate_wav(
+                            text,
+                            voice_file,
+                            voice_text
+                        )
 
+                except Exception as e:
+                    print("[TTS] generation error:", e)
+                if file_path:
+                    q.put(file_path)
+                else:
+                    print("[TTS] empty result")
             except Exception as e:
                 print("[TTS] generator crash:", e)
-
             finally:
-                q.put(END)
                 self.task_queue.task_done()
 
     # ======================================
-    # PLAY
+    # PLAY FILE (single)
     # ======================================
 
-    def play(self, first_segment, segment_queue):
-        file_path = first_segment
-
-        while True:
-            if self.stop_event.is_set():
-                self.stop_event.clear()
-                return
-
-            if file_path is END:
-                return
-
-            if file_path:
-                self._play_file(file_path)
-
-                # удаляем временные файлы (не song_api)
-                if "song_api_result" not in str(file_path):
-                    try:
-                        Path(file_path).unlink(missing_ok=True)
-                    except Exception:
-                        pass
-
+    def play_file(self, file_path):
+        if not file_path:
+            return
+        if self.stop_event.is_set():
+            self.stop_event.clear()
+            return
+        self._play_file(file_path)
+        if "song_api_result" not in str(file_path):
             try:
-                file_path = segment_queue.get(timeout=1)
-            except queue.Empty:
-                continue
+                Path(file_path).unlink(missing_ok=True)
+            except Exception:
+                pass
 
     # ======================================
-    # DEVICE RESOLVE (dynamic)
+    # DEVICE RESOLVE
     # ======================================
 
     def _get_device_index(self):
@@ -160,7 +128,7 @@ class TTSRuntime:
             return None
 
     # ======================================
-    # PLAY FILE
+    # PLAY LOW LEVEL
     # ======================================
 
     def _play_file(self, wav_path):
@@ -174,6 +142,7 @@ class TTSRuntime:
         device_index = self._get_device_index()
         try:
             sd.play(data, sr, device=device_index)
+
             while sd.get_stream().active:
                 if self.stop_event.is_set():
                     sd.stop()

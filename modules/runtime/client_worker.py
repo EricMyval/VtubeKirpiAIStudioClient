@@ -24,14 +24,13 @@ class ClientWorker:
 
     def _execute_event(self, prepared_event):
         event = prepared_event.event
-        segment_queue = prepared_event.segment_queue
 
-        first_segment = None
-        if segment_queue:
+        audio_file = None
+        if prepared_event.segment_queue:
             try:
-                first_segment = segment_queue.get(timeout=300)
+                audio_file = prepared_event.segment_queue.get(timeout=60)
             except:
-                print("[TTS] first segment timeout")
+                print("[TTS] audio generation timeout")
 
         if event.get("alert"):
             payload = alert_service.build_payload(event)
@@ -41,8 +40,8 @@ class ClientWorker:
 
         send_command_list(event.get("start_commands"), self.ws_address)
 
-        if first_segment:
-            tts_runtime.play(first_segment, segment_queue)
+        if audio_file:
+            tts_runtime.play_file(audio_file)
 
         send_command_list(event.get("end_commands"), self.ws_address)
         send_command_list(event.get("ws_commands"), self.ws_address)

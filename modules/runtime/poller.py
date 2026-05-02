@@ -86,7 +86,6 @@ class ClientPoller:
                 api_key = get_api_key()
 
                 # ---------------- API KEY ----------------
-
                 if not api_key:
                     if not self._no_key_logged:
                         print("[Poller] API ключ не задан")
@@ -98,14 +97,12 @@ class ClientPoller:
                     self._no_key_logged = False
 
                 # ---------------- INIT STATE ----------------
-
                 if not self._state_initialized:
                     print("[Poller] API key detected, syncing state...")
                     self.last_event_id = self._load_state()
                     self._state_initialized = True
 
                 # ---------------- REQUEST ----------------
-
                 response = self._request(
                     "POST",
                     CLIENT_POLL,
@@ -130,16 +127,13 @@ class ClientPoller:
                 data = response.json()
 
                 # ---------------- PAUSED ----------------
-
                 self.worker.set_paused(data.get("paused"))
 
                 # ---------------- WS ADDRESS ----------------
-
                 ws_address = data.get("ws_address")
                 self.worker.set_ws_address(ws_address)
 
                 # ---------------- SKIP ----------------
-
                 if data.get("skip"):
                     tts_runtime.stop()
                     request_stop()
@@ -173,29 +167,20 @@ class ClientPoller:
                         incomingEventQueue.add_event(event)
 
                 # ---------------- LAST EVENT ID ----------------
-
                 new_last_event_id = data.get("last_event_id")
-
                 if new_last_event_id is not None:
                     try:
                         new_last_event_id = int(new_last_event_id)
-
                         if new_last_event_id != self.last_event_id:
                             self.last_event_id = new_last_event_id
-                            self._save_state()
-
                     except:
                         pass
 
             # ---------------- ERRORS ----------------
-
             except requests.exceptions.ConnectionError:
                 print("[Poller] connection lost")
-
             except requests.exceptions.Timeout:
                 print("[Poller] timeout")
-
             except Exception as e:
                 print(f"[Poller] unexpected error: {e}")
-
             time.sleep(POLL_INTERVAL)

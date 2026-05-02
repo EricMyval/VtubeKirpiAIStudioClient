@@ -2,7 +2,7 @@ import time
 import requests
 import random
 from pathlib import Path
-from modules.song_api.config import load_config, get_random_bpm, calc_duration, get_random_genre
+from modules.song_api.config import load_config
 from modules.song_api.service import song_api_service
 
 OUTPUT_DIR = Path("data/out_voice")
@@ -22,38 +22,51 @@ def _get_api():
 # CREATE TASK
 # =========================
 
-def _create_task(text, voice_file=None):
+def _create_task(song_payload: dict, voice_file=None):
     api = _get_api()
-    cfg = load_config()
+
     files = {}
     file_handle = None
+
     try:
         if voice_file:
             file_handle = open(voice_file, "rb")
             files["reference_audio"] = file_handle
-        bpm = get_random_bpm(cfg)
-        duration = calc_duration(cfg, text)
-        caption = get_random_genre(cfg)
+
+        text = song_payload.get("text") or ""
+        caption = song_payload.get("genre") or "music"
+        bpm = song_payload.get("bpm") or 120
+        duration = song_payload.get("duration") or 60
+        think = str(bool(song_payload.get("think"))).lower()
+        timesignature = song_payload.get("timesignature") or "4"
+        use_lm = song_payload.get("use_lm", False)
+
         data = {
             "caption": caption,
             "lyrics": text,
-            "think": str(cfg.get("think", True)).lower(),
+            "think": think,
             "bpm": str(bpm),
             "duration": str(duration),
-            "timesignature": str(cfg.get("timesignature", "4")),
+            "timesignature": str(timesignature),
         }
-        if cfg.get("lm_model"):
+
+        if use_lm:
             data["use_lm"] = "true"
+
         r = requests.post(
             f"{api}/release_task",
             data=data,
             files=files,
             timeout=60
         )
+
         result = r.json()
+
         if result.get("code") != 200:
             raise RuntimeError(f"ACE API error: {result}")
+
         return result["data"]["task_id"]
+
     finally:
         if file_handle:
             file_handle.close()
@@ -126,9 +139,9 @@ def _download(url):
 # MAIN ENTRY
 # =========================
 
-def tts_create_file(text: str, voice_file=None, voice_text=None) -> Path:
+def tts_create_file(song_payload: dict, voice_file=None) -> Path:
     start = time.time()
-    task_id = _create_task(text, voice_file)
+    task_id = _create_task(song_payload, voice_file)
     path = _poll_result(task_id)
     print(f"[ACE TTS] done in {round(time.time() - start, 2)}s")
     return path
