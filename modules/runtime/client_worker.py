@@ -28,7 +28,7 @@ class ClientWorker:
         audio_file = None
         if prepared_event.segment_queue:
             try:
-                audio_file = prepared_event.segment_queue.get(timeout=60)
+                audio_file = prepared_event.segment_queue.get(timeout=180)
             except:
                 print("[TTS] audio generation timeout")
 

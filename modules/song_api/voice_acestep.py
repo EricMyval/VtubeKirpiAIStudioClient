@@ -24,23 +24,20 @@ def _get_api():
 
 def _create_task(song_payload: dict, voice_file=None):
     api = _get_api()
-
     files = {}
     file_handle = None
-
     try:
         if voice_file:
             file_handle = open(voice_file, "rb")
             files["reference_audio"] = file_handle
-
-        text = song_payload.get("text") or ""
-        caption = song_payload.get("genre") or "music"
-        bpm = song_payload.get("bpm") or 120
-        duration = song_payload.get("duration") or 60
-        think = str(bool(song_payload.get("think"))).lower()
-        timesignature = song_payload.get("timesignature") or "4"
-        use_lm = song_payload.get("use_lm", False)
-
+        songs = song_payload.get("songs") or {}
+        text = song_payload.get("formatted_text") or ""
+        caption = songs.get("genre") or "music"
+        bpm = songs.get("bpm") or 120
+        duration = songs.get("duration") or 60
+        think = str(bool(songs.get("think"))).lower()
+        timesignature = songs.get("timesignature") or "4"
+        use_lm = songs.get("use_lm", False)
         data = {
             "caption": caption,
             "lyrics": text,
@@ -49,24 +46,18 @@ def _create_task(song_payload: dict, voice_file=None):
             "duration": str(duration),
             "timesignature": str(timesignature),
         }
-
         if use_lm:
             data["use_lm"] = "true"
-
         r = requests.post(
             f"{api}/release_task",
             data=data,
             files=files,
             timeout=60
         )
-
         result = r.json()
-
         if result.get("code") != 200:
             raise RuntimeError(f"ACE API error: {result}")
-
         return result["data"]["task_id"]
-
     finally:
         if file_handle:
             file_handle.close()

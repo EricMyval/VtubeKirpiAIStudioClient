@@ -7,7 +7,7 @@ import sounddevice as sd
 from modules.tts.engine import generate_wav
 from modules.utils.devices import resolve_output_device_index
 from modules.cabinet.models import load_config
-
+from modules.song_api.voice_acestep import tts_create_file
 
 class TTSRuntime:
     def __init__(self):
@@ -41,7 +41,7 @@ class TTSRuntime:
                 voice_file_path,
                 voice_reference_text,
                 result_queue,
-                "song_api"
+                event
             ))
             return result_queue
 
@@ -61,29 +61,14 @@ class TTSRuntime:
 
     def _generation_loop(self):
         while True:
-            text, voice_file, voice_text, q, forced_engine = self.task_queue.get()
-
+            text, voice_file, voice_text, q, event = self.task_queue.get()
             try:
                 file_path = None
-
                 try:
-                    # 🔥 SONG API
-                    if forced_engine == "song_api":
-                        from modules.song_api.voice_acestep import tts_create_file
-
-                        file_path = tts_create_file(
-                            text,
-                            voice_file
-                        )
-
-                    # 🔥 основной TTS
-                    else:
-                        file_path = generate_wav(
-                            text,
-                            voice_file,
-                            voice_text
-                        )
-
+                    if event is not None: # 🔥 SONG API
+                        file_path = tts_create_file(event, voice_file)
+                    else: # 🔥 основной TTS
+                        file_path = generate_wav(text, voice_file, voice_text)
                 except Exception as e:
                     print("[TTS] generation error:", e)
                 if file_path:
