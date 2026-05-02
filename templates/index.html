@@ -131,15 +131,15 @@ autocomplete="off">
 <div class="hero-icon">🎵</div>
 
 <div>
-<div class="hero-title">Song API (песни)</div>
+<div class="hero-title">Song API (модели)</div>
 <div class="hero-sub">
-Генерация песен вместо TTS при донатах
+Загрузка и управление моделью генерации песен
 </div>
 </div>
 
 </div>
 
-<!-- 🔥 статус API -->
+<!-- статус API -->
 <div class="status-line">
 {% if models_data.error %}
 <span class="status red">● API OFFLINE</span>
@@ -150,50 +150,10 @@ autocomplete="off">
 
 <form method="POST" action="{{ url_for('save_song_api') }}" class="form">
 
-<!-- SWITCH -->
-
-<label class="checkbox">
-<input type="checkbox" id="song_enabled" name="enabled"
-{% if song_api.enabled %}checked{% endif %}>
-Включить Song API
-</label>
-
-
-<!-- 🔽 ВСЕ НАСТРОЙКИ -->
-
-<div id="song_settings">
-
-<div class="form-grid">
-
-<!-- ЛЕВАЯ КОЛОНКА -->
-<div class="form-col">
-
 <label>API URL</label>
 <input type="text" name="api_url"
-value="{{ song_api.api_url }}">
-
-<label>Мин. донат</label>
-<input type="number" name="min_amount"
-value="{{ song_api.min_amount }}">
-
-<label>Макс. донат</label>
-<input type="number" name="max_amount"
-value="{{ song_api.max_amount }}">
-
-</div>
-
-
-<!-- ПРАВАЯ КОЛОНКА -->
-<div class="form-col">
-
-<label>BPM</label>
-<input type="text" name="bpm_list"
-value="{{ song_api.bpm_list | join(',') }}"
-placeholder="180,200,220">
-
-<label>Размер такта</label>
-<input type="text" name="timesignature"
-value="{{ song_api.timesignature }}">
+value="{{ song_api.api_url }}"
+placeholder="http://127.0.0.1:8001">
 
 <label>Модель</label>
 <select name="model">
@@ -216,56 +176,16 @@ value="{{ song_api.timesignature }}">
 {% endfor %}
 </select>
 
-</div>
+<div class="actions" style="display:flex; gap:10px;">
 
-</div>
-
-
-<!-- 🎵 ЖАНРЫ -->
-
-<div class="block">
-
-<label>Жанры</label>
-
-<textarea name="genres" rows="3"
-placeholder="каждая строка = отдельный жанр">{{ song_api.genres | join('\n') }}</textarea>
-
-</div>
-
-
-<!-- ⚙️ НИЖНИЙ РЯД -->
-
-<div class="form-grid bottom">
-
-<label class="checkbox">
-<input type="checkbox" name="think"
-{% if song_api.think %}checked{% endif %}>
-Think режим
-</label>
-
-<div>
-<label>Мин. длительность</label>
-<input type="number" name="duration_min"
-value="{{ song_api.duration_min }}">
-</div>
-
-<div>
-<label>Макс. длительность</label>
-<input type="number" name="duration_max"
-value="{{ song_api.duration_max }}">
-</div>
-
-</div>
-
-</div>
-
-
-<!-- SAVE -->
-
-<div class="actions">
-<button type="submit" class="btn primary">
+<button type="submit" name="action" value="save" class="btn">
 💾 Сохранить
 </button>
+
+<button type="submit" name="action" value="init" class="btn primary">
+🚀 Загрузить модуль
+</button>
+
 </div>
 
 </form>
@@ -367,46 +287,6 @@ alert("Не удалось скопировать ссылку")
 }
 
 }
-
-
-// =========================
-// SONG API TOGGLE
-// =========================
-
-function initSongToggle(){
-
-const toggle = document.getElementById("song_enabled")
-const block = document.getElementById("song_settings")
-
-if(!toggle || !block) return
-
-function update(){
-
-if(toggle.checked){
-block.classList.remove("hidden")
-}else{
-block.classList.add("hidden")
-}
-
-}
-
-toggle.addEventListener("change", update)
-
-// init при загрузке
-update()
-
-}
-
-
-// =========================
-// INIT
-// =========================
-
-document.addEventListener("DOMContentLoaded", () => {
-
-initSongToggle()
-
-})
 
 </script>
 

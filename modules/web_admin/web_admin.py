@@ -134,74 +134,23 @@ def save_audio():
 @app.route("/save-song-api", methods=["POST"])
 def save_song_api():
     try:
-        enabled = request.form.get("enabled") == "on"
-        api_url = (request.form.get("api_url") or "").strip()
-
-        # 💰 донаты
-        try:
-            min_amount = float(request.form.get("min_amount") or 0)
-        except:
-            min_amount = 0
-
-        try:
-            max_amount = float(request.form.get("max_amount") or 0)
-        except:
-            max_amount = 999999
-
-        # 🎵 жанры
-        genres_raw = request.form.get("genres") or ""
-        genres = [g.strip() for g in genres_raw.split("\n") if g.strip()]
-
-        # 🎧 bpm
-        bpm_raw = request.form.get("bpm_list") or ""
-        try:
-            bpm_list = [int(x.strip()) for x in bpm_raw.split(",") if x.strip()]
-        except:
-            bpm_list = []
-
-        # ⏱ duration
-        try:
-            duration_min = int(request.form.get("duration_min") or 30)
-        except:
-            duration_min = 30
-
-        try:
-            duration_max = int(request.form.get("duration_max") or 120)
-        except:
-            duration_max = 120
+        action = request.form.get("action")
 
         data = {
-            "enabled": enabled,
-            "api_url": api_url,
-            "min_amount": min_amount,
-            "max_amount": max_amount,
-
-            # 🎵
-            "genres": genres,
-
-            # 🧠
+            "api_url": (request.form.get("api_url") or "").strip(),
             "model": (request.form.get("model") or "").strip(),
             "lm_model": (request.form.get("lm_model") or "").strip() or None,
-
-            # 🎧
-            "bpm_list": bpm_list,
-            "timesignature": request.form.get("timesignature") or "4",
-
-            # ⚙️
-            "think": request.form.get("think") == "on",
-
-            # ⏱
-            "duration_min": duration_min,
-            "duration_max": duration_max,
         }
 
-        # 🔥 сохраняем
+        # всегда сохраняем
         song_api_service.update_settings(data)
 
-        # 🔥 инициализируем модель
-        song_api_service.init_model()
-
-        flash("Song API сохранён 🎵🔥", "success")
+        # если нажали "загрузить"
+        if action == "init":
+            song_api_service.init_model()
+            flash("Модель загружена 🚀", "success")
+        else:
+            flash("Настройки сохранены 💾", "success")
 
     except Exception as e:
         flash(f"Ошибка: {e}", "danger")

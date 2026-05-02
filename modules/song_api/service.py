@@ -14,36 +14,22 @@ class SongAPIService:
     def update_settings(self, data: dict):
         cfg = load_config()
 
-        # 🔥 ВАЖНО: теперь можно перезаписывать None
-        for k, v in data.items():
-            cfg[k] = v
+        # 🔥 обновляем ВСЕ нужные поля
+        if "api_url" in data:
+            cfg["api_url"] = (data.get("api_url") or "").strip()
+
+        if "model" in data:
+            cfg["model"] = (data.get("model") or "").strip()
+
+        if "lm_model" in data:
+            cfg["lm_model"] = data.get("lm_model") or None
 
         save_config(cfg)
 
-        print(f"[SongAPI] ⚙️ settings updated: model={cfg.get('model')} lm={cfg.get('lm_model')}")
-
-    def is_enabled_for_amount(self, amount: float) -> bool:
-        cfg = load_config()
-
-        if not cfg.get("enabled"):
-            return False
-
-        try:
-            min_amount = float(cfg.get("min_amount", 0))
-        except:
-            min_amount = 0.0
-
-        try:
-            max_amount = float(cfg.get("max_amount", 999999999))
-        except:
-            max_amount = 999999999.0
-
-        try:
-            amount = float(amount)
-        except:
-            return False
-
-        return min_amount <= amount <= max_amount
+        print(
+            f"[SongAPI] ⚙️ updated: api={cfg.get('api_url')} | "
+            f"model={cfg.get('model')} | lm={cfg.get('lm_model')}"
+        )
 
     # =========================
     # MODELS INVENTORY
@@ -89,114 +75,35 @@ class SongAPIService:
             print("[SongAPI] ❌ API URL not set")
             return
 
+        model = cfg.get("model")
+        lm_model = cfg.get("lm_model")
+
+        if not model:
+            print("[SongAPI] ❌ model not set")
+            return
+
         try:
-            model = cfg.get("model")
-            lm_model = cfg.get("lm_model")
+            print(f"[SongAPI] ⚙️ init model: {model}")
 
-            if not model:
-                print("[SongAPI] ❌ model not set")
-                return
-
-            inventory = self.get_models_inventory()
-
-            # =========================
-            # CHECK INVENTORY
-            # =========================
-
-            if not inventory or inventory.get("error"):
-                print("[SongAPI] ⚠️ inventory unavailable — forcing init")
-                model_loaded = False
-                lm_loaded = False
-                model_exists = True
-            else:
-                model_loaded = False
-                model_exists = False
-
-                for m in inventory.get("models", []):
-                    if m.get("name") == model:
-                        model_exists = True
-                        if m.get("is_loaded"):
-                            model_loaded = True
-                        break
-
-                if not model_exists:
-                    print(f"[SongAPI] ❌ model not found: {model}")
-                    return
-
-                lm_loaded = False
-
-                if lm_model:
-                    for lm in inventory.get("lm_models", []):
-                        if lm.get("name") == lm_model and lm.get("is_loaded"):
-                            lm_loaded = True
-                            break
-
-            # =========================
-            # INIT MAIN MODEL
-            # =========================
-
-            if model_loaded:
-                print(f"[SongAPI] ✅ model already loaded: {model}")
-            else:
-                print(f"[SongAPI] ⚙️ init model: {model}")
-
-                r = requests.post(
-                    f"{api}/v1/init",
-                    json={
-                        "model": model,
-                        "init_llm": False
-                    },
-                    timeout=30
-                )
-
-                if r.status_code != 200:
-                    print("[SongAPI] ❌ model init failed:", r.text)
-                    return
-
-                print(f"[SongAPI] ✅ model loaded: {model}")
-
-            # =========================
-            # LM LOGIC (🔥 FIXED)
-            # =========================
+            payload = {
+                "model": model,
+                "init_llm": bool(lm_model)
+            }
 
             if lm_model:
-                # ✅ включаем LM только если выбран
+                payload["lm_model_path"] = lm_model
 
-                if lm_loaded:
-                    print(f"[SongAPI] ✅ LM already loaded: {lm_model}")
-                else:
-                    print(f"[SongAPI] 🧠 init LM: {lm_model}")
+            r = requests.post(
+                f"{api}/v1/init",
+                json=payload,
+                timeout=30
+            )
 
-                    r = requests.post(
-                        f"{api}/v1/init",
-                        json={
-                            "model": model,
-                            "init_llm": True,
-                            "lm_model_path": lm_model
-                        },
-                        timeout=30
-                    )
+            if r.status_code != 200:
+                print("[SongAPI] ❌ init failed:", r.text)
+                return
 
-                    if r.status_code != 200:
-                        print("[SongAPI] ⚠️ LM init failed:", r.text)
-                    else:
-                        print(f"[SongAPI] ✅ LM loaded: {lm_model}")
-
-            else:
-                # 🔥 КЛЮЧЕВОЙ ФИКС
-                print("[SongAPI] 🚫 LM disabled")
-
-                r = requests.post(
-                    f"{api}/v1/init",
-                    json={
-                        "model": model,
-                        "init_llm": False
-                    },
-                    timeout=30
-                )
-
-                if r.status_code != 200:
-                    print("[SongAPI] ⚠️ failed to disable LM:", r.text)
+            print(f"[SongAPI] ✅ model ready: {model} | LM: {lm_model}")
 
         except Exception as e:
             print("[SongAPI] ❌ init error:", e)
