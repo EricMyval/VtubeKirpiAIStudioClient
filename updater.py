@@ -19,7 +19,10 @@ def get_installed_torch_cuda(py):
             stderr=subprocess.DEVNULL
         ).decode().strip()
 
-        return out  # "12.4" или None
+        if not out or out.lower() == "none":
+            return None
+
+        return out
     except:
         return None
 
