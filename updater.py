@@ -135,9 +135,6 @@ def install_torch(py, cuda):
 
     print(f"[Torch] installed={installed}, cuda={installed_cuda}")
 
-    # ----------------------------
-    # Уже установлен → проверяем
-    # ----------------------------
     if installed:
         if installed_cuda:
             print("[Torch] CUDA already present → OK")
@@ -146,9 +143,6 @@ def install_torch(py, cuda):
         print("[Torch] wrong version → reinstalling...")
         run([py, "-m", "pip", "uninstall", "-y", "torch", "torchvision", "torchaudio"])
 
-    # ----------------------------
-    # Установка
-    # ----------------------------
     print(f"[Torch] installing for {cuda}...")
 
     run([
@@ -168,7 +162,6 @@ def main():
     print(f"🐍 Using python: {py}")
     install_torch(py, cuda)
     run_client()
-
 
 # ----------------------------
 # ENTRY
