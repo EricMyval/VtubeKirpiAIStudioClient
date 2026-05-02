@@ -1,5 +1,0 @@
-fastapi
-uvicorn
-soundfile
-numpy
-omnivoice

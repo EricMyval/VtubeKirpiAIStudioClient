@@ -1,9 +1,11 @@
 import threading
+
 from modules.runtime.incoming_event_queue import incomingEventQueue
 from modules.runtime.prepared_event_queue import preparedEventQueue
 from modules.runtime.prepared_event import PreparedEvent
 from modules.tts.runtime import tts_runtime
 from modules.utils.constant import PLATFORM_TYPE_TWITCH_POINTS
+
 
 class TTSGenerator:
     def __init__(self):
@@ -16,7 +18,11 @@ class TTSGenerator:
         while True:
             event = incomingEventQueue.get_event()
             try:
+                if not event:
+                    print("[TTSGenerator] empty event")
+                    continue
                 segment_queue = None
+
                 if event.get("platform") != PLATFORM_TYPE_TWITCH_POINTS:
                     text = event.get("formatted_text")
                     voice_file = event.get("voice_file_path")
@@ -28,12 +34,18 @@ class TTSGenerator:
                             voice_text,
                             event=event
                         )
+                    else:
+                        print("[TTSGenerator] missing TTS data")
+
                 preparedEventQueue.add(
                     PreparedEvent(event, segment_queue)
                 )
+
             except Exception as e:
-                print("[TTSGenerator]", e)
+                print("[TTSGenerator error]", e)
+
             finally:
                 incomingEventQueue.task_done()
+
 
 ttsGenerator = TTSGenerator()

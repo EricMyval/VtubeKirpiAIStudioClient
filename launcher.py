@@ -12,19 +12,12 @@ import ssl
 # CONFIG
 # ----------------------------
 
-BASE_DIR = os.path.dirname(
-    sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
-)
-
+BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 UPDATER_PATH = os.path.join(BASE_DIR, "updater.py")
-
 GITHUB_ZIP = "https://codeload.github.com/EricMyval/VtubeKirpiAIStudioClient/zip/refs/heads/master"
 VERSION_URL = "https://raw.githubusercontent.com/EricMyval/VtubeKirpiAIStudioClient/master/version.txt"
-
 LOCAL_VERSION_FILE = os.path.join(BASE_DIR, "version.txt")
-
 VENV_DIR = os.path.join(BASE_DIR, "venv")
-
 TIMEOUT = 10
 
 # ----------------------------

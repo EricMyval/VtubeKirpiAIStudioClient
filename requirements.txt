@@ -5,3 +5,5 @@ numpy
 soundfile
 sounddevice
 flask
+uvicorn
+omnivoice

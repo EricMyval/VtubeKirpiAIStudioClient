@@ -121,55 +121,6 @@ autocomplete="off">
 </div>
 
 
-<!-- ================= TTS ================= -->
-
-<div class="card">
-
-<div class="hero-header">
-
-<div class="hero-icon">🗣️</div>
-
-<div>
-<div class="hero-title">TTS движок</div>
-<div class="hero-sub">
-Выберите движок синтеза речи
-</div>
-</div>
-
-</div>
-
-<form method="POST" action="{{ url_for('save_tts') }}" class="form">
-
-<label>Движок</label>
-
-<select name="tts_engine">
-
-    <option value="omnivoice"
-    {% if tts_engine == "omnivoice" %}selected{% endif %}>
-    OmniVoice (3gb VRAM)
-    </option>
-
-    <option value="vibevoice"
-    {% if tts_engine == "vibevoice" %}selected{% endif %}>
-    VibeVoice (20gb VRAM ComfyUI API)
-    </option>
-
-</select>
-
-<div class="actions">
-
-<button type="submit" class="btn primary">
-💾 Сохранить
-</button>
-
-</div>
-
-</form>
-
-</div>
-
-
-
 
 <!-- ================= SONG API ================= -->
 
