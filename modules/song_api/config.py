@@ -12,7 +12,7 @@ CONFIG_PATH = DB_PATH / "song_api_config.json"
 # =========================
 
 DEFAULT_CONFIG = {
-    "api_url": "http://127.0.0.1:8001",  # 🔥 ОБЯЗАТЕЛЬНО
+    "api_url": "http://127.0.0.1:8001",
     "model": "acestep-v15-turbo",
     "lm_model": None,
 }

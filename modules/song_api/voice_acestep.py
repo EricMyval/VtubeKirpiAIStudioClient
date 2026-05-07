@@ -15,7 +15,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def _get_api():
     cfg = load_config()
-    return cfg.get("api_url")
+    return "http://192.168.1.18:8001"
 
 
 # =========================

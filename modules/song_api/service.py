@@ -37,7 +37,7 @@ class SongAPIService:
 
     def get_models_inventory(self):
         cfg = load_config()
-        api = cfg.get("api_url")
+        api = "http://192.168.1.18:8001"
 
         if not api:
             return {"models": [], "lm_models": [], "error": "no_api"}
@@ -69,7 +69,7 @@ class SongAPIService:
 
     def init_model(self):
         cfg = load_config()
-        api = cfg.get("api_url")
+        api = "http://192.168.1.18:8001"
 
         if not api:
             print("[SongAPI] ❌ API URL not set")
