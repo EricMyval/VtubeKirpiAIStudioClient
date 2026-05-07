@@ -92,17 +92,37 @@ def get_audio_duration(file_path):
     """
     Получаем длительность wav файла
     """
-    with wave.open(str(file_path), "rb") as wf:
-        frames = wf.getnframes()
-        rate = wf.getframerate()
-        return frames / float(rate)
+    try:
+        with wave.open(str(file_path), "rb") as wf:
+            frames = wf.getnframes()
+            rate = wf.getframerate()
+            return frames / float(rate)
+    except Exception:
+        pass
+
+    try:
+        import soundfile as sf
+
+        info = sf.info(str(file_path))
+        if info.samplerate:
+            return info.frames / float(info.samplerate)
+    except Exception as e:
+        print("[EmotionWS] skip scheduling:", e)
+
+    return None
 
 
 def schedule_emotions_ws(formatted_text: str, audio_file, ws_address: str):
     """
     Запускает поток, который отправляет WS команды эмоций по рассчитанным таймингам
     """
+    if not parse_tagged_text(formatted_text):
+        return
+
     audio_duration = get_audio_duration(audio_file)
+    if not audio_duration or audio_duration <= 0:
+        return
+
     timeline = build_emotion_timeline(formatted_text, audio_duration)
 
     if not timeline:
