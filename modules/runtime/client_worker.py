@@ -1,6 +1,7 @@
 import threading
 import time
 from modules.runtime.prepared_event_queue import preparedEventQueue
+from modules.tts.emotion_ws_scheduler import schedule_emotions_ws
 from modules.utils.constant import PAUSED_INTERVAL
 from modules.utils.ws_client import send_command_list
 from modules.utils.donate_panel_api import set_active_donate, clear_active_donate
@@ -41,6 +42,7 @@ class ClientWorker:
         send_command_list(event.get("start_commands"), self.ws_address)
 
         if audio_file:
+            schedule_emotions_ws(event.get("formatted_text", ""), audio_file, self.ws_address)
             tts_runtime.play_file(audio_file)
 
         send_command_list(event.get("end_commands"), self.ws_address)

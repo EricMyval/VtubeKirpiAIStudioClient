@@ -60,9 +60,9 @@ class TTSRuntime:
             try:
                 file_path = None
                 try:
-                    if event is not None: # 🔥 SONG API
+                    if event is not None:
                         file_path = tts_create_file(event, voice_file)
-                    else: # 🔥 основной TTS
+                    else:
                         file_path = generate_wav(text, voice_file, voice_text)
                 except Exception as e:
                     print("[TTS] generation error:", e)
