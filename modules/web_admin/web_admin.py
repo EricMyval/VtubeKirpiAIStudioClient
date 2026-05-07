@@ -1,6 +1,4 @@
 import threading
-import webbrowser
-import time
 import logging
 
 from flask import render_template, request, redirect, url_for, flash, Flask
@@ -46,20 +44,15 @@ def inject_base_url():
 def start_web_admin():
     host = get_host()
     port = get_port()
+    url = f"http://{host}:{port}/"
 
     def _run():
-        print(f"🌐 Web Admin running: http://{host}:{port}/")
+        print(f"Web Admin: {url}")
+        print("Этот адрес можно открыть в браузере.")
         app.run(host=host, port=port, debug=False, use_reloader=False)
 
     th = threading.Thread(target=_run, daemon=True)
     th.start()
-
-    time.sleep(1)
-
-    try:
-        webbrowser.open(f"http://{host}:{port}/")
-    except Exception as e:
-        print("Не удалось открыть браузер:", e)
 
     return th
 

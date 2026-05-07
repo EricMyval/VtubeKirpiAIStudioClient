@@ -2,7 +2,6 @@
 <html lang="ru">
 
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -14,15 +13,26 @@ type="image/x-icon">
 
 <link rel="stylesheet"
 href="{{ url_for('static', filename='css/client-ui.css') }}">
-
 </head>
 
 <body>
+<div class="app-shell">
 
-<div class="app">
+<header class="topbar">
+<div class="brand">
+<div class="brand-mark" aria-hidden="true">K</div>
+<div>
+<p class="eyebrow">Kirpi AI</p>
+<h1>Studio Client</h1>
+<p class="brand-subtitle">Панель подключения, аудио и OBS-виджетов</p>
+</div>
+</div>
 
-
-<!-- ================= FLASH ================= -->
+<div class="server-pill" title="Локальный адрес панели">
+<span class="status-dot"></span>
+{{ BASE_URL }}
+</div>
+</header>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -36,28 +46,22 @@ href="{{ url_for('static', filename='css/client-ui.css') }}">
 {% endif %}
 {% endwith %}
 
+<main class="dashboard">
 
-
-<!-- ================= API ================= -->
-
-<div class="card hero">
-
-<div class="hero-header">
-<div class="hero-icon">🔑</div>
-
+<section class="panel panel-accent">
+<div class="panel-head">
 <div>
-<div class="hero-title">API ключ клиента</div>
-<div class="hero-sub">
-Введите ключ, полученный на сервере
+<p class="eyebrow">Access</p>
+<h2>API ключ клиента</h2>
+<p>Ключ авторизации, полученный на сервере</p>
 </div>
-</div>
+<span class="panel-icon key-icon" aria-hidden="true"></span>
 </div>
 
 <form method="POST" action="{{ url_for('save_api') }}" class="form">
-
-<label>API ключ</label>
-
+<label for="api_key">API ключ</label>
 <input
+id="api_key"
 type="password"
 name="api_key"
 value="{{ api_key }}"
@@ -66,228 +70,174 @@ autocomplete="off">
 
 <div class="actions">
 <button type="submit" class="btn primary">
-💾 Сохранить
+<span class="btn-icon" aria-hidden="true">✓</span>
+Сохранить
 </button>
 </div>
-
 </form>
+</section>
 
-</div>
-
-
-
-<!-- ================= AUDIO ================= -->
-
-<div class="card">
-
-<div class="hero-header">
-
-<div class="hero-icon">🎧</div>
-
+<section class="panel">
+<div class="panel-head">
 <div>
-<div class="hero-title">Устройство вывода</div>
-<div class="hero-sub">
-Выберите устройство воспроизведения
+<p class="eyebrow">Audio</p>
+<h2>Устройство вывода</h2>
+<p>Канал, через который будет воспроизводиться голос</p>
 </div>
-</div>
-
+<span class="panel-icon audio-icon" aria-hidden="true"></span>
 </div>
 
 <form method="POST" action="{{ url_for('save_audio') }}" class="form">
-
-<label>Доступные устройства</label>
-
-<select name="output_device" required>
-
-<option value="">-- Выберите устройство --</option>
-
+<label for="output_device">Доступные устройства</label>
+<select id="output_device" name="output_device" required>
+<option value="">Выберите устройство</option>
 {% for d in output_devices %}
 <option value="{{ d.name }}"
 {% if d.name == current_device %}selected{% endif %}>
 {{ d.name }}
 </option>
 {% endfor %}
-
 </select>
 
 <div class="actions">
 <button type="submit" class="btn primary">
-💾 Сохранить
+<span class="btn-icon" aria-hidden="true">✓</span>
+Сохранить
 </button>
 </div>
-
 </form>
+</section>
 
-</div>
-
-
-
-<!-- ================= SONG API ================= -->
-
-<div class="card">
-
-<div class="hero-header">
-
-<div class="hero-icon">🎵</div>
-
+<section class="panel panel-wide">
+<div class="panel-head split">
 <div>
-<div class="hero-title">Song API (модели)</div>
-<div class="hero-sub">
-Загрузка и управление моделью генерации песен
-</div>
-</div>
-
+<p class="eyebrow">Song API</p>
+<h2>Модели генерации песен</h2>
+<p>Адрес API, основная модель и LM-модель</p>
 </div>
 
-<!-- статус API -->
 <div class="status-line">
 {% if models_data.error %}
-<span class="status red">● API OFFLINE</span>
+<span class="status red"><span></span>API offline</span>
 {% else %}
-<span class="status green">● API ONLINE</span>
+<span class="status green"><span></span>API online</span>
 {% endif %}
 </div>
+</div>
 
-<form method="POST" action="{{ url_for('save_song_api') }}" class="form">
-
-<label>API URL</label>
-<input type="text" name="api_url"
+<form method="POST" action="{{ url_for('save_song_api') }}" class="form song-form">
+<div class="field-row">
+<div class="field">
+<label for="api_url">API URL</label>
+<input
+id="api_url"
+type="text"
+name="api_url"
 value="{{ song_api.api_url }}"
-placeholder="http://127.0.0.1:8001">
+placeholder="http://127.0.0.1:8001"
+spellcheck="false">
+</div>
 
-<label>Модель</label>
-<select name="model">
+<div class="field">
+<label for="model">Модель</label>
+<select id="model" name="model">
 {% for m in models_data.models %}
 <option value="{{ m.name }}"
 {% if m.name == song_api.model %}selected{% endif %}>
-{{ m.name }} {% if m.is_loaded %}✅{% endif %}
+{{ m.name }}{% if m.is_loaded %} · loaded{% endif %}
 </option>
 {% endfor %}
 </select>
+</div>
 
-<label>LM модель</label>
-<select name="lm_model">
+<div class="field">
+<label for="lm_model">LM модель</label>
+<select id="lm_model" name="lm_model">
 <option value="">Не использовать</option>
 {% for lm in models_data.lm_models %}
 <option value="{{ lm.name }}"
 {% if lm.name == song_api.lm_model %}selected{% endif %}>
-{{ lm.name }} {% if lm.is_loaded %}🧠{% endif %}
+{{ lm.name }}{% if lm.is_loaded %} · loaded{% endif %}
 </option>
 {% endfor %}
 </select>
+</div>
+</div>
 
-<div class="actions" style="display:flex; gap:10px;">
-
+<div class="actions">
 <button type="submit" name="action" value="save" class="btn">
-💾 Сохранить
+<span class="btn-icon" aria-hidden="true">✓</span>
+Сохранить
 </button>
 
 <button type="submit" name="action" value="init" class="btn primary">
-🚀 Загрузить модуль
+<span class="btn-icon" aria-hidden="true">↗</span>
+Загрузить модель
 </button>
-
 </div>
-
 </form>
+</section>
 
-</div>
-
-
-<!-- ================= WIDGETS ================= -->
-
-<div class="card">
-
-<div class="hero-header">
-
-<div class="hero-icon">🧩</div>
-
+<section class="panel panel-wide">
+<div class="panel-head">
 <div>
-<div class="hero-title">Виджеты OBS</div>
-<div class="hero-sub">
-Добавьте ссылку в OBS Browser Source
+<p class="eyebrow">OBS</p>
+<h2>Виджеты трансляции</h2>
+<p>Ссылки для Browser Source</p>
 </div>
+<span class="panel-icon widget-icon" aria-hidden="true"></span>
 </div>
-
-</div>
-
 
 <div class="widget">
-
-<div class="widget-head">
-
-<div class="widget-icon">🔔</div>
-
+<div class="widget-main">
+<div class="widget-badge" aria-hidden="true"></div>
 <div>
 <div class="widget-title">Alerts Widget</div>
-<div class="widget-desc">
-Донаты, изображения, звук и видео
+<div class="widget-desc">Донаты, изображения, звук и видео</div>
 </div>
 </div>
 
-</div>
-
-<div class="widget-url"
-data-url="{{ BASE_URL }}/alerts/widget">
-
+<div class="widget-url" data-url="{{ BASE_URL }}/alerts/widget">
 {{ BASE_URL }}/alerts/widget
-
 </div>
 
 <div class="widget-actions">
-
-<button class="btn"
-onclick="copyWidget(this)">
-📋 Copy
+<button class="btn" onclick="copyWidget(this)">
+<span class="btn-icon" aria-hidden="true">□</span>
+<span class="btn-text">Копировать</span>
 </button>
 
 <a href="{{ BASE_URL }}/alerts/widget"
 target="_blank"
 rel="noopener"
 class="btn primary">
-🔗 Open
+<span class="btn-icon" aria-hidden="true">↗</span>
+Открыть
 </a>
-
 </div>
-
 </div>
+</section>
 
+</main>
 </div>
-
-</div>
-
-
 
 <script>
-
-// =========================
-// COPY WIDGET
-// =========================
-
 async function copyWidget(btn){
-
 const card = btn.closest(".widget")
-
-const url =
-card.querySelector(".widget-url").dataset.url
+const url = card.querySelector(".widget-url").dataset.url
 
 try{
-
 await navigator.clipboard.writeText(url)
-
-btn.innerText="✅ Copied"
+const label = btn.querySelector(".btn-text")
+label.textContent = "Скопировано"
 
 setTimeout(()=>{
-btn.innerText="📋 Copy"
+label.textContent = "Копировать"
 },1500)
-
 }catch(e){
-
 alert("Не удалось скопировать ссылку")
-
 }
-
 }
-
 </script>
 
 </body>
